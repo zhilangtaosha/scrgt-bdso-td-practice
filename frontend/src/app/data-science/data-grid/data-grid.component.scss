@@ -1,0 +1,60 @@
+.data-grid {
+  background-color: #E8E8E8;
+  padding-bottom: 8%;
+}
+
+.data-row {
+  height: 36vh;
+  min-height: 300px;
+  padding-top: 8%;
+  font-family: 'Nunito Sans', sans-serif;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.data-background {
+  position: absolute;
+  top: 20px;
+  color: rgba(33,33,33,.15);
+  font-size: 140px;
+  font-weight: 800;
+  letter-spacing: -4px;
+  padding-left: 8px;
+  user-select: none;
+}
+
+.data-col {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 60%;
+  text-align: center;
+}
+
+.cell-title {
+  font-size: 45px;
+  font-weight: 900;
+  color: rgb(33,33,33);
+}
+
+.cell-subtitle {
+  font-size: 30px;
+  font-weight: 800;
+  color: rgb(33,33,33);
+  line-height: 35px;
+  width: 50%;
+  min-width: 300px;
+}
+
+@media (max-width: 800px) {
+  .data-row {
+    min-height: 400px;
+    flex-direction: column;
+  }
+
+  .data-background {
+    top: 150px;
+  }
+}

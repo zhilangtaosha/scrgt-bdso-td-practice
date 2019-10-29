@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    sonar_java_version: "java-1.11.0-openjdk-amd64"
+    sonar_url: "http://localhost"
+  roles:
+     - common
+     - postgres
+     - sonarqube-full

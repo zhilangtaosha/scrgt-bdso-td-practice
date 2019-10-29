@@ -1,0 +1,82 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "title": {
+            "type": "string"
+        },
+        "imdbId": {
+            "type": "string"
+        },
+        "movdbId": {
+            "type": "string"
+        },
+        "budget": {
+            "type": "number"
+        },
+        "homePage": {
+            "type": "string"
+        },
+        "language": {
+            "type": "string"
+        },
+        "overview": {
+            "type": "string"
+        },
+        "popularity": {
+            "type": "integer"
+        },
+        "releaseDate": {
+            "type": "string",
+            "format": "date"            
+        },
+        "revenue": {
+            "type": "number"
+        },
+        "runtime": {
+            "type": "integer"
+        },
+        "originalLanguage": {
+            "type": "string"
+        },
+        "originalTitle": {
+            "type": "string"
+        },
+        "spokenLanguages": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string"
+        },
+        "tagline": {
+            "type": "string"
+        },
+        "ranking": {
+            "type": "integer"
+        },
+        "genres": {
+            "type": "array",
+            "items": {
+                "$ref": "./Genre.json"
+            }
+        },
+        "cast": {
+            "type": "array",
+            "items": {
+                "$ref": "./Cast.json"
+            }
+        },
+        "companies": {
+            "type": "array",
+            "items": {
+                "$ref": "./Company.json"
+            }
+        }
+    },
+    "required": [
+        "title"
+    ]
+}

@@ -1,0 +1,60 @@
+<div class="container bdso-modal">
+    <div class="row">
+        <div id="bioceleb-logo" class="col-md-12 center">
+            <img src="../../../assets/bioceleb.png" alt="BioCeleb logo">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h1>ChangeLog for {{data.fieldName}}</h1>
+        </div>
+    </div>
+    <div class="row">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Type</th>
+                    <th scope="col">Change Date</th>
+                    <th scope="col">Change</th>
+                    <th scope="col">Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{data.type}}</td>
+                    <td>{{data.changeDate | date: 'MM/dd/yyyy'}}</td>
+                    <td>{{data.fieldName}}</td>
+                    <td>{{data.changedBy}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 center">
+            <h2>Original</h2>
+        </div>
+
+        <div class="col-md-6 center">
+            <h2>Changed</h2>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row vdivide scrollable">
+        <div class="col-md-6">
+            <span [innerHTML]="orig"></span>
+        </div>
+        <div class="col-md-6">
+            <span [innerHTML]="update"></span>
+        </div>
+    </div>
+
+    <div id="footer" class="row">
+        <div class="col-md-12">
+            <span>**Changes are reflected in Bold and Underlining.</span>
+        </div>
+    </div>
+</div>
+

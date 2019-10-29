@@ -1,0 +1,24 @@
+[Unit]
+Description=Anchore service
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+# Remove old containers, images and volumes
+ExecStartPre=/usr/local/bin/docker-compose -f /opt/anchore/docker-compose.yaml down -v
+ExecStartPre=-/bin/bash -c 'docker rm -v $(docker ps -aq)'
+
+# Compose up
+ExecStart=/usr/local/bin/docker-compose -f /opt/anchore/docker-compose.yaml up
+
+# Compose down, remove containers and volumes
+ExecStop=/usr/local/bin/docker-compose -f /opt/anchore/docker-compose.yaml down -v
+
+User=root
+Group=root
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

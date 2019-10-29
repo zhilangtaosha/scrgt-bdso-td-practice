@@ -1,0 +1,9 @@
+.DS_Store
+.idea
+*.iml
+target/
+*.ipynb_checkpoints
+*.vscode/
+~*
+*.pyc
+models/*

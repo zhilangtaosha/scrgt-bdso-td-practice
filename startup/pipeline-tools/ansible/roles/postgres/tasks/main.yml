@@ -1,0 +1,20 @@
+    - name: "Make sure postgres is stopped"
+      service: name="postgresql" state="stopped"
+      ignore_errors: yes
+
+    - name: "Enable amazon-linux-extras and install postgresql10"
+      command: "amazon-linux-extras install -y postgresql10 epel"
+
+    - name: "Install Postgres server and contrib"
+      yum:
+        name: [
+              'postgresql-server',
+              'postgresql-contrib'
+              ]
+        state: present
+
+    - name: "Setup PostgreSQL"
+      shell: |
+        /usr/bin/postgresql-setup initdb
+        systemctl enable postgresql.service
+        systemctl start postgresql.service

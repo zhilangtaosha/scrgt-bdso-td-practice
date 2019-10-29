@@ -1,0 +1,1 @@
+ALTER TABLE movies ALTER COLUMN overview TYPE varchar(2000) USING overview::varchar;

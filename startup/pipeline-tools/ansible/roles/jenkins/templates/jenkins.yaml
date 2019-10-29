@@ -1,0 +1,148 @@
+credentials:
+  system:
+    domainCredentials:
+    - credentials:
+      - usernamePassword:
+          description: "GitHub access token"
+          id: "GitHubAccessToken"
+          password: "{{ github_access_token }}"
+          scope: GLOBAL
+          username: "SCRGT-Submission"
+      - usernamePassword:
+          description: "login credentials for docker.io"
+          id: "docker-login"
+          scope: GLOBAL
+          username: "salientcrgt2"
+          password: {{ dockerio_pass }}
+      - usernamePassword:
+          description: "login credentials for ocp"
+          id: "ocpToken"
+          scope: GLOBAL
+          username: "admin"
+          password: {{ ocp_token }}
+      - string:
+          description: "SonarQube access token"
+          id: "BDSO_SonarQube"
+          scope: GLOBAL
+          secret: "{{ sonar_token.stdout }}"
+    - credentials:
+      - string:
+          description: "GitHub WebHook API Token"
+          id: "BDSO_Git_WebHook"
+          scope: GLOBAL
+          secret: "{{ github_webhook_token }}"
+      domain:
+        description: GitHub Domain
+        name: "api.github.com"
+        specifications:
+        - schemeSpecification:
+            schemes: "https"
+        - hostnameSpecification:
+            includes: "api.github.com"
+jenkins:
+  agentProtocols:
+  - "JNLP4-connect"
+  - "Ping"
+  authorizationStrategy: "loggedInUsersCanDoAnything"
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: true
+  disableRememberMe: false
+  globalNodeProperties:
+  - envVars:
+      env:
+      - key: "PATH+EXTRA"
+        value: "/usr/local/bin"
+      - key: "FRONTEND_DEV_URL"
+        value: "https://scrgt-bdso-cc-frontend-dev.ocp.{{domain}}"
+      - key: "API_DEV_URL"
+        value: "https://scrgt-bdso-cc-ms-celebrity-dev.ocp.{{domain}}"
+      - key: "DOMAIN"
+        value: "{{domain}}"
+  markupFormatter: "plainText"
+  mode: NORMAL
+  myViewsTabBar: "standard"
+  numExecutors: 2
+  primaryView:
+    all:
+      name: "all"
+  projectNamingStrategy: "standard"
+  quietPeriod: 5
+  remotingSecurity:
+    enabled: true
+  scmCheckoutRetryCount: 0
+  securityRealm:
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+      users:
+      - id: "{{ jenkins_admin_username }}"
+        password: "{{ jenkins_admin_password }}"
+  slaveAgentPort: -1
+  updateCenter:
+    sites:
+    - id: "default"
+      url: "https://updates.jenkins.io/update-center.json"
+  views:
+  - all:
+      name: "all"
+  viewsTabBar: "standard"
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: true
+  downloadSettings:
+    useBrowser: false
+  sSHD:
+    port: -1
+unclassified:
+  gitHubPluginConfig:
+    configs:
+    - credentialsId: "BDSO_Git_WebHook"
+      name: "scrgt-bdso-cc-github"
+    hookUrl: "{{ jenkins_url }}:{{ jenkins_port }}/github-webhook"
+  gitSCM:
+    createAccountBasedOnEmail: false
+  githubPullRequests:
+    actualiseOnFactory: false
+  logParser:
+    legacyFormatting: false
+  pipeline-model:
+    registry:
+      url: "https://docker.io/"
+  pollSCM:
+    pollingThreadCount: 10
+  sonarGlobalConfiguration:
+    buildWrapperEnabled: true
+    installations:
+    - credentialsId: "BDSO_SonarQube"
+      name: "BDSOSonar"
+      serverUrl: "http://sonar.{{domain}}:9000"
+      serverAuthenticationToken: {{ sonar_token.stdout }}
+      triggers:
+        skipScmCause: false
+        skipUpstreamCause: false
+  upstream:
+    globalUpstreamFilterStrategy: UseOldest
+tool:
+  dependency-check:
+    installations:
+    - name: "default 5.2.1 "
+      properties:
+      - installSource:
+          installers:
+          - dependencyCheckInstaller:
+              id: "5.2.1"
+  git:
+    installations:
+    - home: "git"
+      name: "Default"
+  sonarRunnerInstallation:
+    installations:
+    - name: "BDSOSonarScanner"
+      properties:
+      - installSource:
+          installers:
+          - sonarRunnerInstaller:
+              id: "4.0.0.1744"

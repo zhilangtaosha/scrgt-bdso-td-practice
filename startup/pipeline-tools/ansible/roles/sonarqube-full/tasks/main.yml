@@ -1,0 +1,137 @@
+    - name: "Make sure sonarqube is stopped"
+      service: name="sonar" state="stopped"
+      ignore_errors: yes
+
+    - name: "Remove java 8"
+      yum:
+        name:  "java-1.8.0-openjdk-headless"
+        state: "absent"
+
+    - name: "Enable amazon-linux-extras for java-11"
+      command: "amazon-linux-extras enable java-openjdk11"
+
+    - name: "Install prerequisites"
+      yum:
+        name: [
+              java-11-openjdk-headless,
+              python-psycopg2
+              ]
+        state: "present"
+
+    - name: "Create Sonar group"
+      group:
+        name: "{{ sonar_group }}"
+        state: present
+
+    - name: "Create Sonar user"
+      user:
+        name: "{{ sonar_user }}"
+        groups: "{{ sonar_group }}"
+        create_home: no
+        home: /opt/sonarqube
+        state: "present"
+
+    - name: Check if sonar exists in /opt
+      stat: path=/opt/sonarqube-7.9
+      register: s
+
+    - name: unarchive SonarQube 7.9
+      unarchive:
+        src: https://scrgt-bdso-jenkins.s3.us-east-2.amazonaws.com/sonar/sonarqube-7.9.zip
+        dest: /opt
+        remote_src: yes
+        group: sonar
+        owner: sonar
+
+    - name: "install SonarQube"
+      shell: |
+        cd /opt
+        ln -s /opt/sonarqube-7.9 /opt/sonarqube
+      args:
+        creates: /opt/sonarqube
+      when: not s.stat.exists
+
+    - name: "create dir"
+      shell: |
+        mkdir -p /opt/sonarqube/conf/
+
+    - name: "copy config"
+      copy:
+        src: "templates/sonar.properties"
+        dest: "/opt/sonarqube/conf/sonar.properties"
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: "chown everything"
+      file:
+        path:      /opt/sonarqube/
+        state:     directory
+        recurse:   yes
+        owner:     sonar
+        group:     sonar
+
+    - name: allow username/password login for postgres
+      lineinfile:
+        path: /var/lib/pgsql/data/pg_hba.conf
+        regexp: '^host    all             all             127.0.0.1/32'
+        line:   'host    all             all             127.0.0.1/32            trust'
+
+    - name: increase vm.max_map_count
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^vm.max_map_count'
+        line: 'vm.max_map_count=262144'
+
+    - name: restart postgres and sysctl to make the above changes take effect
+      shell: |
+        sysctl -p
+        systemctl restart postgresql
+
+    - name: "create sonar db user"
+      become: true
+      become_user: postgres
+      postgresql_user:
+        name: sonar
+        password: "{{ master_password }}"
+        encrypted: yes
+
+    - name: "set up database"
+      become: true
+      become_user: postgres
+      postgresql_db:
+        db: sonar
+        owner: sonar
+        encoding: UTF8
+        template: template0
+
+    - name: "setup service"
+      copy:
+        src: "templates/sonar.service"
+        dest: "/etc/systemd/system/sonar.service"
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: "start sonar"
+      shell: |
+        systemctl enable sonar
+        systemctl start sonar
+
+    - debug:
+        var: sonar_ip
+
+    - name: "Wait for Sonar to come up"
+      uri:
+        url: "http://{{sonar_ip}}:9000"
+        status_code: 200,404
+      register: result
+      until: result.status == 200
+      retries: 60
+      delay: 5
+
+    # - name: set admin password
+    #   shell: |
+    #     curl -I --request POST \
+    #       --url 'http://{{sonar_ip}}:9000/api/users/change_password?login=admin&previousPassword=admin&password={{ sonarqube_pass }}' \
+    #       --header 'authorization: Basic YWRtaW46YWRtaW4='

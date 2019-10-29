@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "imdbId": {
+            "type": "string"
+        },
+        "movdbId": {
+            "type": "string"
+        },
+        "birthName": {
+            "type": "string"
+        },
+        "firstName": {
+            "type": "string"
+        },
+        "lastName": {
+            "type": "string"
+        },
+        "nickName": {
+            "type": "string"
+        },
+        "dob": {
+            "type": "string",
+            "format": "date"            
+        },
+        "birthPlace": {
+            "type": "string"
+        },
+        "gender": {
+            "$ref": "./Gender.json"
+        },
+        "height": {
+            "type": "string"
+        },
+        "popularity": {
+            "type": "integer"
+        },
+        "totalBoxOffice": {
+            "type": "number"
+        },
+        "averageBoxOffice": {
+            "type": "number"
+        },        
+        "biography": {
+            "type": "string"
+        },
+        "imageUrl": {
+            "type": "string"
+        },
+        "image": {
+            "type": "string"
+        },
+        "age": {
+            "type": "integer"
+        },
+        "totalSalary": {
+            "type": "number"
+        },
+        "averageSalary": {
+            "type": "number"
+        },
+        "genres": {
+            "type": "array",
+            "items": {
+                "$ref": "./Genre.json"
+            }
+        },
+        "filmography": {
+            "$ref": "./Filmography.json"
+        }
+    },
+    "required": [
+        "firstName",
+        "lastName"
+    ]
+}

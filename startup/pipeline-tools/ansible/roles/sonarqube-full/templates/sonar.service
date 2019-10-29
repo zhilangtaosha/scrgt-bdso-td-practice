@@ -1,0 +1,27 @@
+[Unit]
+Description=SonarQube service
+After=syslog.target network.target
+
+[Service]
+Type=forking
+WorkingDirectory=/opt/sonarqube
+
+LimitNOFILE=65536
+LimitNPROC=4096
+
+ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+
+User=sonar
+Group=sonar
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+export SONARQUBE_JDBC_PASSWORD={{ master_password }}
+export SONARQUBE_JDBC_USERNAME=sonar
+export SONARQUBE_HOME=/opt/sonarqube
+export SONAR_VERSION=7.9

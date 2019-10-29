@@ -1,0 +1,364 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Starting (parent) template for building out the startup infrastructure for the BDSO project.
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Initial Setup"
+        Parameters:
+          - EnvironmentName
+          - StartupResourcePW
+          - StartupResourcePWConfirm
+          - InstanceType
+          - SSHLocation
+          - GitUserName
+          - GitPW
+          - GitPWConfirm
+Parameters:
+  EnvironmentName:
+    Description: Alphabetical name which will be added to resources created to ensure uniqueness.
+    Type: String
+    Default: BDSO
+    AllowedPattern: "^[a-zA-Z]+$"
+    NoEcho: false
+    ConstraintDescription: Please only use letters (uppercase or lowercase)
+  GitUserName:
+    Description: Username for accessing the git repository
+    Type: String
+    Default: IRNSDD-Demo3
+  GitPW:
+    Description: Password for accessing the git repository
+    Type: String
+    NoEcho: true
+    AllowedPattern: "[a-zA-Z0-9]{8,32}"
+    ConstraintDescription: "Password must be between 8 and 32 characters and only contain alphanumerics."
+  StartupResourcePW:
+    Description: Enables password authentication on all created resources. Please choose a password.
+    Type: String
+    NoEcho: true
+    AllowedPattern: "[a-zA-Z0-9]{8,32}"
+    ConstraintDescription: "Password must be between 8 and 32 characters and only contain alphanumerics."
+    Default: DevOps001
+  StartupResourcePWConfirm:
+    Description: Confirm resource password here.
+    Type: String
+    NoEcho: true
+    AllowedPattern: "[a-zA-Z0-9]{8,32}"
+    ConstraintDescription: "Password must be between 8 and 32 characters and only contain alphanumerics"
+    Default: DevOps001
+  InstanceType:
+    Description: EC2 instance type - Smaller sizes may run sluggishly.
+    Type: String
+    Default: m5.large
+    AllowedValues:
+    - t2.micro
+    - t2.small
+    - t2.medium
+    - t2.large
+    - m5.large
+    ConstraintDescription: Must be a valid EC2 instance type.
+Mappings:
+  AWSInstanceType2Arch:
+    t2.nano:
+      Arch: HVM64
+    t2.micro:
+      Arch: HVM64
+    t2.small:
+      Arch: HVM64
+    t2.medium:
+      Arch: HVM64
+    t2.large:
+      Arch: HVM64
+    m5.large:
+      Arch: HVM64
+  AWSInstanceType2NATArch:
+    t2.nano:
+      Arch: NATHVM64
+    t2.micro:
+      Arch: NATHVM64
+    t2.small:
+      Arch: NATHVM64
+    t2.medium:
+      Arch: NATHVM64
+    t2.large:
+      Arch: NATHVM64
+    m5.large:
+      Arch: NATHVM64
+  AWSRegionArch2AMI:
+    us-east-1:
+      HVM64: ami-0b69ea66ff7391e80
+      HVMG2: NOT_SUPPORTED
+    us-east-2:
+      HVM64: ami-0d8f6eb4f641ef691
+      HVMG2: NOT_SUPPORTED
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: VPC
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn: VPC
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    DependsOn: VPC
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: VPC
+    Properties:
+      VpcId: !Ref VPC
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+  SubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetA
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        -
+          Ref: "IAMEC2Role"
+  IAMEC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "SCRGT_BDSO_EC2_Admin"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "SCRGT_BDSO_EC2_Admin"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: "Allow"
+              Action: "*"
+              Resource: "*"
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - SubnetA
+      - InternetGateway
+      - InstanceSecurityGroup
+    Properties:
+      Tags:
+        -
+          Key: "Name"
+          Value: "Startup_Server"
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          SubnetId:
+            Ref: SubnetA
+          GroupSet:
+            - Fn::GetAtt:
+              - InstanceSecurityGroup
+              - GroupId
+            - Fn::GetAtt:
+              - VPC
+              - DefaultSecurityGroup
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - IPAddress=
+            - Ref: IPAddress
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -xe
+            yum -y install git jq
+            yum install -y python-pip
+            pip install ansible --upgrade
+            wget https://releases.hashicorp.com/terraform/0.12.6/terraform_0.12.6_linux_amd64.zip
+            unzip terraform_0.12.6_linux_amd64.zip
+            mv terraform /usr/bin/
+            chmod +x /usr/bin/terraform
+            wget https://github.com/openshift/origin/releases/download/v3.9.0/openshift-origin-client-tools-v3.9.0-191fece-linux-64bit.tar.gz
+
+            # install java 1.8. This is required for running jenkins jobs duringn the infrastructure building
+            yum install java-1.8.0-openjdk -y
+
+            #tar -zvxf openshift-origin-client-tools-v3.9.0-191fece-linux-64bit.tar.gz
+            #sudo cp openshift-origin-client-tools-v3.9.0-191fece-linux-64bit/oc /usr/bin/
+            cat << 'EOF' > /home/ec2-user/start.sh
+            #!/bin/bash
+            STARTTIME=`date +"%D %T"`
+            PASS=${StartupResourcePW}
+            echo "Cloning Git Repo"
+            # Added the username in the url so it will not prompt for that. This is to reduce # of keys USCIS can enter.
+            # need to clone the datascience repo as well to copy files and data to s3.
+               
+            git clone --branch master https://${GitUserName}:${GitPW}@github.com/SalientCRGT/scrgt-bdso-cc-startup.git
+            git clone --branch master https://${GitUserName}:${GitPW}@github.com/SalientCRGT/scrgt-bdso-cc-datascience.git
+            
+            echo "Configuring aws region (us-east-2)"
+
+            if [ -d ~/.aws ]
+            then
+              echo -e "[default]\nregion = us-east-2" > ~/.aws/config
+            else
+              mkdir ~/.aws && echo -e "[default]\nregion = us-east-2" > ~/.aws/config
+            fi
+
+            pushd ./scrgt-bdso-cc-startup/
+            echo "Universal Password set to $PASS. You can change this in the script if you would like"
+            ./startup.sh $PASS
+            popd
+            
+            #get jenkins url
+            pushd ./scrgt-bdso-cc-startup/pipeline-tools/terraform
+            JENKINSIP=`terraform output jenkins_ip`
+            PROJECT=`terraform output project_name`
+            popd
+
+            # run datascience shell to copy files and data
+            pushd ./scrgt-bdso-cc-datascience
+            chmod +x ds-start.sh
+            ./ds-start.sh $JENKINSIP $PASS $PROJECT
+            popd
+            ENDTIME=`date +"%D %T"`
+            echo "--------------------------------"
+            echo "Process Start Time: $STARTTIME"
+            echo "Process End   Time: $ENDTIME"
+            echo "--------------------------------"
+            cat bdso-infrastructure-assets.out
+            EOF
+
+            cat << 'EOF' > /home/ec2-user/destroy.sh
+            #!/bin/bash
+            
+            # delete vpc. sometimes it does not get deleted
+            pushd scrgt-bdso-cc-startup/pipeline-tools/terraform
+            VPC=`terraform output tools_vpc`
+            echo $VPC
+            popd
+
+
+            PASS=unimportant
+            pushd scrgt-bdso-cc-startup
+            chmod +x destroy.sh
+            ./destroy.sh $PASS
+            popd
+            #delete tools vpc. Tried this but it still does not delete. Works only via the console.
+            #del=`aws ec2 delete-vpc --vpc-id $VPC`
+            EOF
+
+            cat << 'EOF' > /home/ec2-user/infraBuild.py
+            #!/usr/bin/python
+
+            import argparse
+            import subprocess
+            import sys
+
+            parser = argparse.ArgumentParser(description="Use this script to create or destroy the BDSO infrastructure")
+            parser.add_argument('command', choices=['create', 'destroy'], help='Include create or destroy to create or destroy the infrastructure')
+            args = parser.parse_args()
+
+            if len(sys.argv) < 1:
+              parser.print_help()
+              sys.exit(1)
+
+            if args.command == 'create':
+                subprocess.call(['./start.sh'])
+            elif args.command == 'destroy':
+                subprocess.call(['./destroy.sh'])
+            EOF
+
+            chmod +x /home/ec2-user/start.sh
+            chmod +x /home/ec2-user/destroy.sh
+            chmod +x /home/ec2-user/infraBuild.py
+
+            echo -e '${StartupResourcePW}\n${StartupResourcePW}' | passwd ec2-user
+            sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+            chmod +x /home/ec2-user/start.sh
+            systemctl restart sshd
+      InstanceType:
+        Ref: InstanceType
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionArch2AMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: InstanceType
+          - Arch
+      IamInstanceProfile:
+        Ref: EC2InstanceProfile
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opens port 22 for SSH access.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+  SSMParameterEC2IP:
+    Type: "AWS::SSM::Parameter"
+    DependsOn: EC2Instance
+    Properties:
+      Name: "EC2IP"
+      Type: "String"
+      Value:
+        Fn::GetAtt:
+        - EC2Instance
+        - PublicIp
+      Description: "IP address of the EC2 instance"
+      AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
+Rules:
+  'ConfirmPasswordEC2':
+    Assertions:
+      - Assert:
+          Fn::Equals:
+            - Ref: 'StartupResourcePW'
+            - Ref: 'StartupResourcePWConfirm'
+        AssertDescription: 'EC2 passwords must be equal.'
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value:
+      Ref: EC2Instance
+  PublicDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - EC2Instance
+      - PublicDnsName
+  PublicIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - EC2Instance
+      - PublicIp

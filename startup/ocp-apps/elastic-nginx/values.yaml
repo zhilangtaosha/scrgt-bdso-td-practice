@@ -1,0 +1,24 @@
+serverBlock: |-
+    server {
+
+      listen       8080;
+      server_name  search.example.com;
+
+      error_log   elasticsearch-errors.log;
+      access_log  elasticsearch.log;
+
+      location / {
+        if ($request_method !~ "GET") {
+          return 403;
+          break;
+        }
+
+        proxy_pass http://elasticsearch-master:9200;
+        proxy_redirect off;
+
+        proxy_set_header  X-Real-IP  $remote_addr;
+        proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header  Host $http_host;
+      }
+
+    }

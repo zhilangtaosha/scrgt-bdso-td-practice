@@ -1,0 +1,15 @@
+---
+- include_tasks: "set-quiet-mode.yml"
+
+- name: Clean plugins dir
+  file:
+    state: absent
+    path: "/home/jenkins/plugins/"
+
+- name: Unarchive plugins
+  unarchive:
+    src: https://scrgt-bdso-jenkins.s3.us-east-2.amazonaws.com/plugins/plugins.tar.gz
+    dest: /home/jenkins
+    remote_src: yes
+    group: jenkins
+    owner: jenkins

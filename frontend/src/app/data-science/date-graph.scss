@@ -1,0 +1,41 @@
+.data-component {
+  height: 100vh;
+  min-height: 800px;
+  font-family: 'Nunito Sans', sans-serif;
+  background-color: #E8E8E8;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.heading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding-left: 8px;
+  color: #E8E8E8;
+  line-height: 20px;
+  margin: 12px;
+  color: #212121;
+}
+
+.heading h2 {
+  font-weight: bold;
+}
+
+.graph-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  height: inherit;
+  min-width: 800px;
+}
+
+.data-src {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  padding: 0 20px;
+}

@@ -1,0 +1,37 @@
+<div class="overview">
+  <div class="heading">
+      <h3>
+        June 2009 - June 2019
+      </h3>
+      <hr>
+  </div>
+  <div class="card-container">
+    <div class="big-data-card">
+      <i class="fas fa-film fa-3x"></i>
+      <div id="movieCount" class="big-data-card--bignum">
+        {{ filmsTotal?.movieCount | number }}
+      </div>
+      <p class="big-data-card--title">
+        Films made with Top 100 Celebrities.
+      </p>
+    </div>
+    <div class="big-data-card">
+      <i class="fas fa-video fa-3x"></i>
+      <div id="multiActor" class="big-data-card--bignum">
+        {{ filmsTotal?.multipleActorCount | number }}
+      </div>
+      <p class="big-data-card--title">
+        Films made with multiple Top 100 Celebrities.
+      </p>
+    </div>
+    <div class="big-data-card">
+      <i class="fas fa-ticket-alt fa-3x"></i>
+      <div id="totalBox" class="big-data-card--bignum">
+        {{ filmsTotal?.totalBoxOffice | currency:'USD'}}
+      </div>
+      <p class="big-data-card--title">
+        Domestic Box Office of films featuring the Top 100 Celebrities.
+      </p>
+    </div>
+  </div>
+</div>

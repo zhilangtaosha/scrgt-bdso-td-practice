@@ -1,0 +1,145 @@
+import org.gradle.internal.os.OperatingSystem
+
+import org.apache.tools.ant.taskdefs.condition.Os;
+
+configurations {
+    liquibase
+}
+
+dependencies {
+    liquibase "org.liquibase.ext:liquibase-hibernate5:${liquibase_hibernate5_version}"
+}
+
+if (OperatingSystem.current().isWindows()) {
+    ext.psql = "C:/PostgreSQL/10/bin/psql.exe"
+} else {
+    if (System.getenv('PSQL_BIN') == null) {
+        ext.psql = "/usr/bin/psql"
+    } else {
+        ext.psql = System.getenv('PSQL_BIN')
+    }
+}
+
+def runpsql(String sqlFile, String dbConnection) {
+    println "Running " + sqlFile
+    exec {
+        ignoreExitValue true
+        environment 'PGPASSWORD', "${databasePassword}"
+        executable psql
+        args '-h', "${databaseHost}",
+            '-p', "${databasePort}",
+            '-U', "${databaseAdmin}",
+            '-d', "${dbConnection}",
+            '-f', "${sqlFile}",
+            '-v', "databaseName=${databaseName}",
+            '-v', "databaseAdminUser=${databaseAdmin}",
+            '-v', "databaseSchema=${databaseSchema}",
+            '-v', "databaseAppRole=${databaseAppRole}",
+            '-v', "liquibaseSchema=${liquibaseSchema}",
+            '-v', "databaseAppPassword='${databaseAppPassword}'",
+            '-v', "databaseNameQuotes='${databaseNameQuotes}'"
+    }
+}
+
+def runpsql(String sqlFile) {
+    println "Running " + sqlFile
+    exec {
+        ignoreExitValue true
+        environment 'PGPASSWORD', "${databasePassword}"
+        executable psql
+        args '-h', "${databaseHost}",
+            '-p', "${databasePort}",
+            '-U', "${databaseAdmin}",
+            '-f', "${sqlFile}",
+            '-v', "databaseAdminUser=${databaseAdmin}",
+            '-v', "databaseName=${databaseName}",
+            '-v', "databaseNameQuotes='${databaseNameQuotes}'"
+    }
+}
+
+task baseline {
+    doLast {
+        runpsql('src/main/resources/db/changelog/baseline/drop_schema.sql', "${databaseName}")
+        runpsql('src/main/resources/db/changelog/baseline/drop_user.sql', "${databaseName}")
+        runpsql('src/main/resources/db/changelog/baseline/drop_database.sql')
+        runpsql('src/main/resources/db/changelog/baseline/create_database.sql')
+        runpsql('src/main/resources/db/changelog/baseline/create_user_schema.sql', "${databaseName}")
+    }
+}
+
+task baselineTest {
+    doLast {
+        runpsql('src/main/resources/db/changelog/baseline/drop_schema.sql', "${databaseName}")
+        runpsql('src/main/resources/db/changelog/baseline/drop_user.sql', "${databaseName}")
+        runpsql('src/main/resources/db/changelog/baseline/create_user_schema.sql', "${databaseName}")
+    }
+}
+
+if (OperatingSystem.current().isWindows()) {
+    task pathingLiquibaseJar(type: Jar) {
+        dependsOn configurations.liquibase
+        appendix = 'pathingLiquibase'
+
+        doFirst {
+            manifest {
+                attributes 'Class-Path':
+                    sourceSets.main.runtimeClasspath.plus(configurations.liquibase)
+                    .collect {
+                        it.toURI().toURL().toString().replaceFirst(/file:\/+/, '/')
+                    }.join(' ')
+            }
+        }
+    }
+}
+
+task initPaths(dependsOn: compileJava) {
+    group = "liquibase"
+    if (OperatingSystem.current().isWindows()) {
+        dependsOn pathingLiquibaseJar
+	}
+}
+
+def liquibaseCommand(command) {
+    javaexec {
+        if (OperatingSystem.current().isWindows()) {
+            classpath files(pathingLiquibaseJar.archivePath)
+        } else {
+            classpath sourceSets.main.runtimeClasspath
+            classpath configurations.liquibase
+        }
+        main = "liquibase.integration.commandline.Main"
+
+        args "--changeLogFile=src/main/resources/db/changelog/db.changelog-master.yaml"
+        args "--referenceUrl=hibernate:spring:com.ematch.domain?dialect=org.hibernate.dialect.PostgreSQL82Dialect&hibernate.physical_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy&hibernate.implicit_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy"
+        args "--username=${databaseAdmin}"
+        args "--password=${databasePassword}"
+        args "--defaultSchemaName=${databaseSchema}"
+        args "--url=jdbc:postgresql://${databaseHost}:${databasePort}/${databaseName}?currentSchema=${databaseSchema}"
+        args "--driver=org.postgresql.Driver"
+        args command
+    }
+}
+
+task liquibaseDiffChangeLog(dependsOn: initPaths) {
+    doLast {
+        liquibaseCommand("diffChangeLog")
+    }
+}
+
+task liquibaseClearChecksums(dependsOn: initPaths) {
+    doLast {
+        liquibaseCommand("clearChecksums")
+    }
+}
+
+task liquibaseUpdate(dependsOn: initPaths) {
+    doLast {
+        liquibaseCommand("update")
+    }
+}
+
+def buildTimestamp() {
+    def date = new Date()
+    def formattedDate = date.format('yyyyMMddHHmmss')
+    return formattedDate
+}

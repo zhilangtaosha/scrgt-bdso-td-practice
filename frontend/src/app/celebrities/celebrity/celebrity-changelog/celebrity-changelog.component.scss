@@ -1,0 +1,66 @@
+h1, h2, h3, p, td, th {
+    color: #fff
+}
+
+h1, h2 {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.data-table th,td {
+    color: #333;
+    font-family: NunitoSans-Regular, Nunito Sans;
+    font-size: 16px;
+    font-weight: 400;
+    text-align: center;
+    line-height: 22px;
+    padding: 0px 5px;
+    border: 1px solid #797979;
+}
+
+.data-table th {
+    background-color: #aeb0b5;
+    text-align: center
+}
+
+.data-table td {
+    background-color: #fff;
+    text-align: left;
+    vertical-align: middle;
+}
+
+td.date {
+    text-align: center;
+}
+
+div.table-responsive{
+    max-height: 30vh;
+}
+
+.view-btn {
+    border-radius: 6px;
+    border-color: rgb(121,121,121);
+    border-width: 1px;
+    border-style: solid;
+    background-color: #fff;
+    margin: 2px;
+    color: rgb(121,121,121);
+    font-size: 13px;
+    padding: 0px 15px;
+}
+
+button.view-btn:hover {
+    background-color: #e2e2e2;
+}
+
+.view-btn > img {
+    height: 15px;
+}
+
+.centered {
+    text-align: center !important;
+}
+
+@-moz-document url-prefix() {
+    fieldset { display: table-cell; }
+  }

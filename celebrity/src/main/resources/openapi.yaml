@@ -1,0 +1,135 @@
+openapi: 3.0.2
+info:
+  title: Celebrity API
+  description: API to retrieve celebrity information
+  version: 1.0.0
+servers:
+  - url: 'https://{url}/api/v1'
+    variables:
+      url:
+        default: localhost:8080
+paths:
+  /celebrities:
+    get:
+      summary: Retrieve all celebrities.
+      operationId: getCelebrities
+      description: Retrieve all celebrity information.
+      responses:
+        '200':
+          description: A list of celebrities.
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Celebrities'
+        '404':
+          description: Resource was not found
+          content: {}
+        '500':
+          $ref: '#/components/responses/Standard500ErrorResponse'
+    post:
+      summary: Update a celebrity.
+      operationId: updateCelebrity
+      description: Updates an existing celebrity's data.
+      requestBody:
+        description: Celebrity data.
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas/json/Celebrity.json'
+        required: true
+      responses:
+        '200':
+          description: Celebrity successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/json/Celebrity.json'
+        '500':
+          $ref: '#/components/responses/Standard500ErrorResponse'
+  /celebrities/{celebrityId}:
+    get:
+      summary: Get Celebrity By ID
+      operationId: findCelebrityById
+      description: Returns A Celebrity information by id.
+      parameters:
+       - $ref: "#/components/parameters/celebrityId"
+      responses:
+        '200':
+          description: Returns Celebrity Information
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/json/Celebrity.json'
+        '500':
+          $ref: "#/components/responses/Standard500ErrorResponse"
+  /changelogs:
+    get:
+      summary: Retrieve all changelogs.
+      operationId: getChangeLogs
+      description: Retrieve all data changelogs.
+      responses:
+        '200':
+          description: A list of data changelogs.
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeLogs'
+        '404':
+          description: Resource was not found
+          content: {}
+        '500':
+          $ref: '#/components/responses/Standard500ErrorResponse'
+  /changelogs/{celebrityId}:
+    get:
+      summary: Get change logs for celebrity
+      operationId: findCelebrityChangelogsById
+      description: Returns a celebrity's changelogs by id.
+      parameters:
+       - $ref: "#/components/parameters/celebrityId"
+      responses:
+        '200':
+          description: Returns celebrity change log information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeLogs'
+        '500':
+          $ref: "#/components/responses/Standard500ErrorResponse"
+  /datasources/load:
+    post:
+      summary: Loads celebrities from datasources.
+      operationId: loadDatasources
+      description: Loads celebrities from a list of datasources
+      responses:
+        '200':
+          description: Datasources successfully loaded.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          $ref: '#/components/responses/Standard500ErrorResponse'
+        '400':
+          description: Unable to load datasources
+
+components:
+  schemas:
+    Celebrities:
+      type: array
+      items:
+        $ref: 'schemas/json/Celebrity.json'
+    ChangeLogs:
+      type: array
+      items:
+        $ref: 'schemas/json/ChangeLog.json'
+  responses:
+    Standard500ErrorResponse:
+      description: An unexpected error occured.
+  parameters:
+    celebrityId:
+      name: celebrityId
+      in: path
+      required: true
+      description: Celebrity Id
+      schema:
+        type: integer

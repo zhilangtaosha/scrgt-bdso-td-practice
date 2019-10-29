@@ -1,0 +1,269 @@
+<div class="container" style="padding-left: 8px;" >
+  <h1 id="mainTitle" style="text-align: center">{{ celebDetails?.firstName }} {{ celebDetails?.lastName }}</h1>
+  <div class="row" style="margin-bottom: 20px">
+    <div class="col-md-12">
+      <button id="editBtn" class="btn btn-secondary " style="width: 20%;" (click)="editData()" *ngIf="canEdit">EDIT</button>
+      <button id="saveBtn" class="btn btn-light " style="width: 20%;" (click)="saveData()"  *ngIf="showSave">SAVE</button>
+    </div>
+  </div>
+
+  <div class="row" style="margin-bottom: 20px">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6">
+          <h2 id="yrFilms">Films Per Year</h2>
+          <div id="celeb-chart"></div>
+          <div style="color: #fff">*Graph may be empty when no movies with release date available</div>
+          <div>*Graph may be empty when no movies with release date available</div>
+        </div>
+        <div class="col-md-6">
+          <div class="row">
+            <h2 id="basic">Basic Stats</h2>
+          </div>
+          <div class="row">
+            <div class="basic-stat-info">
+              <table class="table table-borderless">
+                <tbody>
+                <tr>
+                  <td id="firstNameLabel">First Name: </td>
+                  <td id="firstNameText" *ngIf="!editing">{{celebDetails.firstName}}</td>
+                  <td *ngIf="editing">
+                    <input id="firstName" class="form-control" [(ngModel)]="celebDetails.firstName">
+                  </td>
+                </tr>
+                <tr>
+                  <td id="LastNameLabel">Last Name: </td>
+                  <td id="LastNameText" *ngIf="!editing">{{celebDetails.lastName}}</td>
+                  <td *ngIf="editing">
+                    <input id="lastName" class="form-control" [(ngModel)]="celebDetails.lastName">
+                  </td>
+                </tr>
+                <tr>
+                  <td id="birthNameLabel">Birth Name: </td>
+                  <td id="birthNameText" *ngIf="!editing">{{celebDetails.birthName}}</td>
+                  <td *ngIf="editing">
+                    <input id="birthName" class="form-control" [(ngModel)]="celebDetails.birthName">
+                  </td>
+                </tr>
+                <tr>
+                  <td id="nickName">Nicknames: </td>
+                  <td id="nickNameText" *ngIf="!editing">{{celebDetails.nickName}}</td>
+                  <td *ngIf="editing">
+                    <input id="nickName-1" class="form-control" [(ngModel)]="celebDetails.nickName">
+                  </td>
+                </tr>
+                <tr>
+                  <td id=dobLabel>Date of Birth: </td>
+                  <td id="dobText" *ngIf="!editing">{{celebDetails.dob}}</td>
+                  <td *ngIf="editing">
+                    <input id="dateOfBirth" class="form-control" [(ngModel)]="celebDetails.dob">
+                  </td>
+                </tr>
+                <tr>
+                  <td id=birthplaceLabel>Birthplace: </td>
+                  <td id="birthplaceText" *ngIf="!editing">{{celebDetails.birthPlace}}</td>
+                  <td *ngIf="editing">
+                    <input id="birthPlace" class="form-control" [(ngModel)]="celebDetails.birthPlace">
+                  </td>
+                </tr>
+                <tr>
+                  <td id="heightLabel">Height: </td>
+                  <td id="heightText" *ngIf="!editing">{{celebDetails.height}}</td>
+                  <td *ngIf="editing">
+                    <input id="height" class="form-control" [(ngModel)]="celebDetails.height">
+                  </td>
+                </tr>
+                <tr>
+                  <td id="genderLabel">Gender: </td>
+                  <td id="genderText" *ngIf="!editing">{{celebDetails.gender}}</td>
+                  <td *ngIf="editing">
+                    <input id="gender" class="form-control" [(ngModel)]="celebDetails.gender">
+                  </td>
+                </tr>
+                <tr>
+                  <td id="popLabel">Popularity: </td>
+                  <td id="popText" *ngIf="!editing">{{celebDetails.popularity}}</td>
+                  <td *ngIf="editing">
+                    <input id="popularity" class="form-control" [(ngModel)]="celebDetails.popularity">
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row">
+            <table class="table table-borderless my-custom-scrollbar">
+              <thead>
+              <tr>
+                <th id="filmHeader">Films</th>
+                <th id="totalDomHeader">Total Domestic Box Office</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr>
+                <td id="moviesText" *ngIf="!editing">{{celebDetails.filmography?.movies.length}}</td>
+                <td *ngIf="editing">
+                  <input id="totalMovies" class="form-control" [(ngModel)]="celebDetails.filmography?.movies.length">
+                </td>
+                <td id="totalText" *ngIf="!editing">{{celebDetails.totalBoxOffice | currency}}</td>
+                <td *ngIf="editing">
+                  <input id="total" class="form-control" [(ngModel)]="celebDetails.totalBoxOffice">
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <h2 id="bioTitle">Biography</h2>
+              <textarea id="bio-noEdit" *ngIf="!editing" class="md-textarea biotable" readonly>
+                {{celebDetails.biography}}
+              </textarea>
+              <td *ngIf="editing" class="md-textarea biotable">
+                <textarea id="bio" class="form-control" [(ngModel)]="celebDetails.biography"></textarea>
+              </td>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="row" style="margin-bottom: 20px">
+  <h2 id="reccom">Recommendations</h2>
+    <div class="row">
+      <div class="col-md-6">
+        <h5>Recommendation By Face</h5>
+        <div class="col-md-12 rec">
+          <div *ngFor="let actor of recommendedByFace">
+            <span (click)="onRecommendationClick(actor.id, actor.birthName)">
+              <img  id="{{'reccom-facial'+actor.id}}"  style="height: 75px; width: 71px;" class="img-circle" src="{{ actor.imageUrl }}" alt="{{ actor.birthName }}">
+            </span>
+            <!-- <span>{{ actor.firstName }} {{ actor.lastName }}</span> -->
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h5>Recommendation By Genre Stats </h5>
+        <div class="col-md-12 rec">
+          <div *ngFor="let actor of recommendationByGenreStat">
+            <span (click)="onRecommendationClick(actor.id, actor.birthName)">
+              <img  id="{{'reccom-genre-stats'+actor.id}}"  style="height: 75px; width: 71px;" class="img-circle" src="{{ actor.imageUrl }}" alt="{{ actor.birthName }}">
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <h5>Recommendation By Genre Plots </h5>
+        <div class="col-md-12 rec">
+          <div *ngFor="let actor of recommendationByGenrePlots">
+            <span (click)="onRecommendationClick(actor.id, actor.birthName)">
+              <img  id="{{'reccom-genre-plots'+actor.id}}"  style="height: 75px; width: 71px;" class="img-circle" src="{{ actor.imageUrl }}" alt="{{ actor.birthName }}">
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h5 >Recommendation By Genre Similar Bios </h5>
+        <div class="col-md-12 rec">
+          <div *ngFor="let actor of recommendationBySimilarBios">
+            <span (click)="onRecommendationClick(actor.id, actor.birthName)">
+              <img  id="{{'reccom-bios'+actor.id}}"  style="height: 75px; width: 71px;" class="img-circle" src="{{ actor.imageUrl }}" alt="{{ actor.birthName }}">
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-bottom: 20px">
+      <h2 id="filmTitle">Filmography</h2>
+      <div class="col-md-12" style="height: 400px; overflow: auto">
+        <div class="table-wrapper-scroll-y">
+          <table class="table table-borderless">
+            <thead>
+            <tr>
+              <th id="filmTitleHeader">Film Title</th>
+              <th id="charHeader">Character</th>
+              <th id="genreHeader">Genres(s)</th>
+              <th id="releaseHeader">Release Date</th>
+            </tr>
+            </thead>
+            <tbody *ngIf="hasMovies">
+            <tr *ngFor="let movie of celebDetails.filmography.movies; let id=index">
+              <td id="{{'movieTitleText-'+id}}" *ngIf="!editing">{{ movie.title }}</td>
+              <td *ngIf="editing">
+
+                <input id="{{'movieTitle-'+id}}" class="form-control" [(ngModel)]="movie.title">
+              </td>
+              <td id="{{'movieCharText-'+id}}" *ngIf="!editing">{{ ourRoles[id] }}</td>
+              <td *ngIf="editing">
+                <input id="{{'movieChar-'+id}}" class="form-control" [(ngModel)]="movie.character">
+              </td>
+              <td *ngIf="!editing">{{ movie.genres }}</td>
+              <td *ngIf="editing">
+                <input id="{{'movieGenre-'+id}}" class="form-control" [(ngModel)]="movie.genres">
+              </td>
+              <td id="{{'movieReleaseText-'+id}}" *ngIf="!editing">{{ movie.releaseDate }}</td>
+              <td *ngIf="editing">
+                <input id="{{'movieRelease-'+id}}" class="form-control" [(ngModel)]="movie.releaseDate">
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+  </div>
+
+  <div class="row" style="margin-bottom: 20px">
+    <h2 id="newsHeader">Newsfeed</h2>
+    <br style="display: block">
+    <div class="row">
+      <div style="display: inline;" class="col-md-6 table-wrapper-scroll-y my-custom-scrollbar" *ngFor="let news of newsfeed">
+        <h4 style="color: #fff; text-align: center;"> {{ news.source }}</h4>
+        <app-newsfeed [newsSource]="news" [celebName]="celebDetails.firstName +' ' + celebDetails.lastName"></app-newsfeed>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top: 20px;">
+    <h2>Sources</h2>
+    <br style="display: block">
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table table-borderless sourceTable">
+          <tr style="display: inline">
+            <th>
+              <img id="sourceImg-imdb" src="../../../assets/imdbLogo.png" alt="imdb">
+            </th>
+          </tr>
+
+          <tr style="display: inline">
+            <th>
+              <img id="sourceImg-wiki" src="../../../assets/wikiLogo.jpeg" alt="wikipedia">
+            </th>
+          </tr>
+
+          <tr style="display: inline">
+            <th>
+              <img id="sourceImg-moviedb" src="../../../assets/themovieDbLogo.jpeg" alt="moviedb">
+            </th>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-bottom: 20px">
+      <h2 id="changesTitle">Changelog History</h2>
+    <br style="display: block">
+    <div class="col-md-12">
+      <app-celebrity-changelog></app-celebrity-changelog>
+    </div>
+
+  </div>
+
+</div>

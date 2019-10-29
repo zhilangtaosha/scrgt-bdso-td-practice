@@ -1,0 +1,120 @@
+.overview {
+  height: calc(100vh - (60px));
+  // min-height: 800px;
+  font-family: 'Nunito Sans', sans-serif;
+  background-color: #212121;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  // padding: 10rem 0;
+}
+
+.heading {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  text-transform: uppercase;
+  padding-top: 6rem;
+  position: absolute;
+  text-align: center;
+}
+
+.heading h3 {
+  font-weight: 700;
+  font-size: 1.9rem;
+  margin-bottom: 1.9rem;
+}
+
+hr {
+  width: 3rem;
+  height: .15rem;
+  background-color: #A10103;
+  margin: 0 auto 2rem;
+}
+
+.card-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: 80%;
+  height: inherit;
+  // min-height: inherit;
+}
+
+.big-data-card {
+  height: 100px;
+  width: 33.33%;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  margin: 12px;
+  font-family: 'Nunito Sans', sans-serif;
+  margin: 3.5%;
+  color: #E8E8E8;
+}
+
+.fas {
+  margin-bottom: 1rem;
+  color: #A10103;
+}
+
+.big-data-card--range {
+  font-size: 16px;
+  padding-bottom: 5px;
+}
+
+.big-data-card--bignum {
+  display: flex;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: bold;
+  letter-spacing: -2px;
+  margin-bottom: .5rem;
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.2;
+  color: inherit;
+}
+
+.big-data-card--title {
+  font-size: 1.3rem;
+  color: #ffffff;
+}
+
+@media (max-width: 800px) {
+  .overview {
+    height: calc(100vh + 10rem);
+    min-height: 900px;
+    padding-top: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .heading {
+    padding-top: 2rem;
+    top: 1rem;
+  }
+
+  .card-container {
+    flex-direction: column;
+  }
+
+  .big-data-card {
+    height: 200px;
+    padding-bottom: 30px;
+    width: 100%;
+  }
+
+  .fas {
+    margin-bottom: .5rem;
+  }
+
+  .big-data-card {
+    margin-bottom: 0;
+  }
+}

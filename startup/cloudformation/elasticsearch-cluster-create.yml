@@ -1,0 +1,87 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ElasticSearch CloudFormation
+Parameters:
+  DomainName:
+    Description: 'A name for the Amazon ES domain. MUST BE LOWERCASE [a-z][a-z0-9\-]+'
+    Type: String
+    Default: bdso
+  EBSEnabled:
+    Description: 'Specifies whether Amazon EBS volumes are attached to data nodes in the Amazon ES domain (some instance types come with instance store that you can use instead).'
+    Type: String
+    AllowedValues: [true, false]
+    Default: true
+  EBSVolumeSize:
+    Description: 'The size of the EBS volume for each data node. The minimum and maximum size of an EBS volume depends on the EBS volume type and the instance type to which it is attached.'
+    Type: Number
+    Default: 10
+  ElasticsearchVersion:
+    Description: 'Elasticsearch version'
+    Type: String
+    Default: '6.8'
+    AllowedValues: ['7.1', '6.8', '6.7', '6.5', '6.4', '6.3', '6.2', '6.0', '5.6', '5.5']
+  ClusterInstanceCount:
+    Description: 'The number of data nodes (instances) to use in the Amazon ES domain.'
+    Type: Number
+    Default: 1
+  ClusterInstanceType:
+    Description: 'The instance type for your data nodes.'
+    Type: 'String'
+    Default: 't2.small.elasticsearch'
+  DedicatedMasterCount:
+    Description: 'The number of dedicated master nodes (instances) to use in the Amazon ES domain (set to 0 to disable dedicated master nodes).'
+    Type: Number
+    Default: 3
+  DedicatedMasterType:
+    Description: 'The instance type for your dedicated master nodes.'
+    Type: 'String'
+    Default: 't2.small.elasticsearch'
+#  VPC:
+#    Description: VPC ID
+#    Type: String
+#  SubnetID:
+#    Description: Subnet ID
+#    Type: String
+Conditions:
+  HasSingleClusterInstance: !Equals [!Ref ClusterInstanceCount, '1']
+  HasDedicatedMasterNodes: !Not [!Equals [!Ref DedicatedMasterCount, 0]]
+Resources:
+  ElasticsearchDomain:
+    Type: 'AWS::Elasticsearch::Domain'
+    Properties:
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action:
+          - 'es:ESHttp*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
+      DomainName: !Ref 'DomainName'
+      EBSOptions:
+        EBSEnabled: !Ref EBSEnabled
+        VolumeSize: !Ref EBSVolumeSize
+        VolumeType: gp2
+      ElasticsearchClusterConfig:
+        DedicatedMasterCount: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterCount, !Ref 'AWS::NoValue']
+        DedicatedMasterEnabled: !If [HasDedicatedMasterNodes, true, false]
+        DedicatedMasterType: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterType, !Ref 'AWS::NoValue']
+        InstanceCount: !Ref ClusterInstanceCount
+        InstanceType: !Ref ClusterInstanceType
+        ZoneAwarenessEnabled: !If [HasSingleClusterInstance, false, true]
+      ElasticsearchVersion: !Ref ElasticsearchVersion
+      Tags:
+        - Key: Name
+          Value: !Sub "${DomainName}-ElasticSearch"
+#      VPCOptions:
+#        SecurityGroupIds:
+#        - !Ref SecurityGroup
+#        SubnetIds:
+#        - !Ref SubnetID
+Outputs:
+  DNSName:
+    Description: "The domain-specific endpoint that's used to submit index, search, and data upload requests to an Amazon ES domain."
+    Value: !GetAtt 'ElasticsearchDomain.DomainEndpoint'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'

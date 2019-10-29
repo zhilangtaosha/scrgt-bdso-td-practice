@@ -1,0 +1,34 @@
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### Eclipse ###
+.DS_Store
+.classpath
+.project
+.settings
+.vscode
+/target/
+/.gradle
+/build
+/bin/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### OpenApi
+.openapi-generator/
+pom.xml
+Currency.json
+src/test/java/gov/dhs/uscis/bdso/celebrity/model/

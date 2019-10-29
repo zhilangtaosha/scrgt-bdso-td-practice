@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  .dockerconfigjson: >-
+    eyJhdXRocyI6eyJkb2NrZXIuaW8iOnsidXNlcm5hbWUiOiJzYWxpZW50Y3JndDIiLCJwYXNzd29yZCI6IkRvbnRUZWxsQW55b25lIiwiZW1haWwiOiJ1bnVzZWQiLCJhdXRoIjoiYzJGc2FXVnVkR055WjNReU9rUnZiblJVWld4c1FXNTViMjVsIn19fQ==
+kind: Secret
+metadata:
+  name: dockerhub
+type: kubernetes.io/dockerconfigjson

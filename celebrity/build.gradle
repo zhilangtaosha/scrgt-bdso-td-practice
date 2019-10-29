@@ -1,0 +1,166 @@
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'jacoco'
+    id "org.openapi.generator" version "4.1.1"
+    id "org.springframework.boot" version "2.1.7.RELEASE"
+    id "org.sonarqube" version "2.7.1"
+}
+
+apply plugin: 'io.spring.dependency-management'
+apply from: 'gradle/liquibase.gradle'
+
+description = """BDSO project for Celebrity Microservice"""
+
+group = 'gov.dhs.uscis.bdso'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+eclipse {
+  project {
+    name = 'BDSO - Celebrity'
+    comment = 'BDSO project for Celebrity Microservice'
+  }
+}
+
+repositories {
+     maven { url "https://repo.spring.io/libs-milestone" }
+     maven { url "http://repo.maven.apache.org/maven2" }
+}
+
+ext {
+    set('keycloakVersion', '4.8.3.Final')
+}
+
+
+dependencies {
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-elasticsearch'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
+    implementation group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version: '2.1.7.RELEASE'
+    implementation group: 'org.springframework.security', name: 'spring-security-oauth2-client'
+    implementation group: 'org.postgresql', name: 'postgresql'
+    implementation group: 'org.liquibase', name: 'liquibase-core'
+    implementation group: 'org.apache.commons', name: 'commons-lang3'
+    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.8'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+    implementation group: 'com.h2database', name: 'h2'
+    implementation group: 'com.github.dozermapper', name: 'dozer-core', version: '6.5.0'
+    implementation group: 'io.springfox', name: 'springfox-swagger2', version:'2.8.0'
+    implementation group: 'io.springfox', name: 'springfox-swagger-ui', version:'2.8.0'
+    implementation group: 'javax.inject', name: 'javax.inject', version: '1'
+    implementation group: 'javax.validation', name: 'validation-api'
+    implementation group: 'javax.xml.bind', name: 'jaxb-api'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310'
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-jsonSchema', version: '2.9.9'
+    implementation group: 'org.openapitools', name: 'jackson-databind-nullable', version: '0.2.0'
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.11.609'
+    implementation group: 'org.json', name: 'json', version: '20190722'
+    
+//    runtimeOnly group: 'org.springframework.boot', name: 'spring-boot-devtools'
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+}
+
+// exclude openapi generated classes and dtos
+def excludedClasses = [
+    "**/*Application.java",
+    "**/api/*Api*.*",
+    "**/domain/**",
+    "**/model/**",
+    "**/property/**",
+    "**/repository/**",
+    "**/config/**"
+]
+
+jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(
+                dir: it,
+                excludes: excludedClasses
+            )
+        })
+    }
+
+    violationRules {
+        rule {
+            limit {
+                minimum = new BigDecimal("${code_coverage_threshold}")
+            }
+        }
+    }
+
+    dependsOn jacocoTestReport
+}
+
+jacocoTestReport {
+    reports {
+      xml.enabled true
+      csv.enabled false
+      xml.destination file("${buildDir}/reports/jacoco.xml")
+      html.destination file("${buildDir}/reports/jacocoHtml")
+      additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+    }
+
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(
+                dir: it,
+                excludes: excludedClasses
+            )
+        })
+    }
+}
+
+[test, bootRun].each { task ->
+        task.systemProperty "DB_HOST", "${databaseHost}"
+	    task.systemProperty "DB_PORT", "${databasePort}"
+	    task.systemProperty "DB_NAME", "${databaseName}"
+	    task.systemProperty "DB_USERNAME", "${databaseAppRole}"
+	    task.systemProperty "DB_PASSWORD", "${databaseAppPassword}"
+}
+
+sonarqube {
+    properties {
+        property 'sonar.coverage.exclusions', excludedClasses
+    }
+}
+
+openApiGenerate {
+    generatorName = "spring"
+    validateSpec = true
+    inputSpec = "$rootDir/src/main/resources/openapi.yaml".toString()
+    outputDir = "$rootDir".toString()
+    apiPackage = "gov.dhs.uscis.bdso.celebrity.api"
+    invokerPackage = "gov.dhs.uscis.bdso.celebrity"
+    modelPackage = "gov.dhs.uscis.bdso.celebrity.model"
+    verbose = false
+    configOptions = [
+        dateLibrary: "java8",
+        hideGenerationTimestamp: "true",
+        interfaceOnly: "true",
+        java8: "true",
+        sourceFolder: "src/main/java"
+    ]
+    // importMappings = [
+    //     // "Celebrities": "gov.dhs.uscis.bdso.celebrity.model.Celebrities",
+    //     Celebrity: "gov.dhs.uscis.bdso.celebrity.model.Celebrity"
+    // ]
+}
+
+// compileJava.dependsOn tasks.openApiGenerate
+check.dependsOn jacocoTestCoverageVerification
+test.finalizedBy jacocoTestReport
+
+wrapper {
+    gradleVersion = '5.1'
+}

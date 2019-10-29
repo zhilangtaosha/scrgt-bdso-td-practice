@@ -1,0 +1,45 @@
+#!groovy
+
+
+
+node {
+
+    try {
+      stage ('Dev') {
+		println "======Execute Dev API======"
+		sh '''
+		  curl --insecure --max-time 600 -X POST "https://scrgt-bdso-cc-ms-celebrity-dev.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/api/v1/datasources/load" -H "accept: text/plain"
+		  curl --insecure -X POST https://scrgt-bdso-recommendation-dev.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/admin/createIndexes/ -H "accept: application/json"
+		  
+		  curl --insecure -X POST https://scrgt-bdso-recommendation-dev.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/admin/loadModels -H "accept: application/json"
+		'''
+      }
+       stage ('Test') {
+		println "======Execute Test API======"
+		sh '''
+		  curl --insecure --max-time 600 -X POST "https://scrgt-bdso-cc-ms-celebrity-test.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/api/v1/datasources/load" -H "accept: text/plain"
+		  curl --insecure -X POST https://scrgt-bdso-recommendation-test.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/admin/createIndexes/ -H "accept: application/json"
+		  
+		  curl --insecure -X POST https://scrgt-bdso-recommendation-test.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/admin/loadModels -H "accept: application/json"
+		'''
+      }
+	  stage ('Prod') {
+		println "======Execute Prod API======"
+		sh '''
+		  curl --insecure --max-time 600 -X POST "https://scrgt-bdso-cc-ms-celebrity-prod.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/api/v1/datasources/load" -H "accept: text/plain"
+		  curl --insecure -X POST https://scrgt-bdso-recommendation-prod.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/admin/createIndexes/ -H "accept: application/json"
+		  
+		  curl --insecure -X POST https://scrgt-bdso-recommendation-prod.ocp.${OCP_DOMAIN}.salientcrgt-bdso.com/admin/loadModels -H "accept: application/json"
+		'''
+      }
+      
+    }
+    finally {
+      stage('Finalize') {
+        println "==== Cleanup ====="
+      }
+    }
+
+}
+
+ 

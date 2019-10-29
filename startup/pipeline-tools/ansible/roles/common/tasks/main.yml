@@ -1,0 +1,24 @@
+# baseline for development boxes
+
+- name: upgrade all packages
+  become: true
+  yum:
+    name: '*'
+    state: latest
+
+- name: "Install base packages"
+  yum:
+    name: [
+          'make',
+          'automake',
+          'gcc',
+          'gcc-c++',
+          'kernel-devel',
+          'bzip2',
+          'java',
+          'git',
+          'unzip',
+          'tar',
+          'nmap',
+          ]
+    state: "present"

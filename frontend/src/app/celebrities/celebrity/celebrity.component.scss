@@ -1,0 +1,161 @@
+
+h1, h2, h3, h5, p, td, th {
+  color: #fff
+}
+
+td {
+  padding: 10px;
+}
+
+.celeb-details {
+  background: #404040;
+  padding: 10%;
+}
+
+.biotable {
+  text-align: left;
+  border: none;
+  height: 200px;
+  width: 100%;
+  background: #484848;
+  color: #fff;
+  font-size: 14px;
+  overflow: auto;
+  display: flex;
+}
+
+.basic-stat-info {
+  font-style: 18px;
+}
+
+.my-custom-scrollbar {
+  position: relative;
+  max-height: 400px;
+  overflow: auto;
+}
+
+h1, h2 {
+  font-weight: bold;
+  margin-top: 10px;
+}
+.img-circle {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+}
+canvas {
+  width: 300px;
+  height: 300px;
+}
+.sourceTable {
+  width: 100%;
+  table-layout: fixed;
+}
+.sourceTable td + td {
+  border-left: 1px solid grey;
+}
+.table td, .table th {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+#celeb-chart {
+  height: 400px;
+  width: 400px;
+}
+::ng-deep
+.dc-legend-item text {
+  fill: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+::ng-deep
+.dc-chart .pie-slice {
+  fill: #fff;
+}
+::ng-deep
+.dc-legend-item text > tspan > tspan {
+  font-weight: 400;
+}
+@media (min-width: 768px) {
+  ::ng-deep
+  #celeb-chart svg {
+    position: absolute;
+    left: -30px;
+  }
+}
+
+.right {
+  float: right;
+}
+
+.col-xs-5ths,
+.col-sm-5ths,
+.col-md-5ths,
+.col-lg-5ths {
+    position: relative;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.col-xs-5ths {
+    width: 20%;
+    float: left;
+}
+
+@media (min-width: 768px) {
+    .col-sm-5ths {
+        width: 20%;
+        float: left;
+    }
+}
+
+@media (min-width: 992px) {
+    .col-md-5ths {
+        width: 20%;
+        float: left;
+    }
+}
+
+@media (min-width: 1200px) {
+    .col-lg-5ths {
+        width: 20%;
+        float: left;
+    }
+}
+.scroll400{
+  overflow: auto;
+  height:400px;
+}
+.scroll300{
+  overflow: auto;
+  height: 300px;
+  background: #484848;
+  color: #fff
+}
+.scroll200{
+  overflow: auto;
+  height:200px;
+}
+.bodycontainer {
+  width: 100%;
+  margin: 0;
+  /* overflow-y: auto; */
+  height: 150px;
+  overflow: auto;
+}
+.table-scrollable {
+  margin: 0;
+  padding: 0;
+}
+
+.rec > div {
+  display: inline-block;
+  margin: 10px;
+}
+
+.rec > div:hover{
+  cursor: pointer;
+}

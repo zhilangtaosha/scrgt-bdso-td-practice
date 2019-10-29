@@ -1,0 +1,20 @@
+@startuml
+
+title Data flow Sequence
+
+actor "Data Science" as DS
+participant "Datascience Github Repo" as G
+participant "S3" as S
+participant "Dataload" as D
+participant "Celebrity API" as C
+DS -> G: Pre-process IMDB, MovieDB, Wikipedia
+G -> S: Startup script copies github data celebrity-content-dev bucket
+S -> D: Startup script triggers load in dev
+D -> C: For each record call celebrity API in dev
+G -> S: Startup script copies github data celebrity-content-test bucket
+S -> D: Startup script triggers load in test
+D -> C: For each record call celebrity API in test
+G -> S: Startup script copies github data celebrity-content-prod bucket
+S -> D: Startup script triggers load in prod
+D -> C: For each record call celebrity API in prod
+@enduml

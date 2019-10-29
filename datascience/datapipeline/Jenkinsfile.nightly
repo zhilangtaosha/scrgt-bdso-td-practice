@@ -1,0 +1,23 @@
+#!groovy
+
+
+
+node {
+
+    try {
+      stage ('Dev') {
+		 echo "to be developed"
+      }
+       stage ('Test') {
+		echo "to be developed"
+      }
+	  stage ('Prod') {
+		echo "to be developed"
+      }
+      
+    }
+    
+
+}
+
+ 

@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="row" *ngIf="!searchResults.hasData">
+    <h1>No Results were found for given input</h1>
+  </div>
+  <div *ngIf="searchResults.hasData">
+    <div class="row"  *ngFor="let sr of searchResults.data; let r = index">
+      <div class="col-lg-4">
+        <div class="card" [class.card-clicked]="sr.id === displayId && showCelebDetail" (click)="showDetail(sr.id, sr.birthName)">
+          <div class="view">
+            <img  style="padding-left: 7%" src="{{ sr.imageUrl }}" alt="{{ sr.birthName }}">
+            <h4 style="text-align: center; color: #fff;">{{ sr.firstName }} {{ sr.lastName }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8" style="margin-bottom: 45px; padding-left: 5%">
+        <div class="container">
+          <div class="row">
+            <p>Gender</p>
+            <p>{{ sr.gender }}</p>
+          </div>
+          <div class="row">
+            <p>Age</p>
+            <p>{{ sr.age }}</p>
+          </div>
+          <div class="row">
+            <p>Average Salary</p>
+            <p>{{ sr.averageSalary | currency:'USD' }}</p>
+          </div>
+          <div class="row">
+            <p>Genres</p>
+            <p>
+              <span *ngFor="let g of sr.genres">
+                {{ g }}
+              </span>
+              </p>
+          </div>
+        </div>
+      </div>
+      <br>
+      <!--dynamic content-->
+      <div class="celeb-details" *ngIf="sr.id === displayId && showCelebDetail" tabindex="1">
+        <app-celebrity  [canEdit]="canEdit" [celebDetails]="celebDetails"></app-celebrity>
+      </div>
+    </div>
+  </div>
+</div>

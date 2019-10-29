@@ -1,0 +1,2 @@
+imageTag: "6.8.1"
+elasticsearchHosts: "http://elasticsearchdb-master:9200"

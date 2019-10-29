@@ -1,0 +1,99 @@
+#!groovy
+
+def SERVICE_VERSION = env.BUILD_NUMBER
+def SERVICE_IMAGE = "func_test";
+def OCP_IMAGE = null;
+def DOCKER_REGISTRY = "salientcrgt2"
+def DOCKER_HUB_TOKEN = "docker-login"
+
+def CommonGroovyTasks = null;
+
+def GIT_BASE_BRANCH = "develop";
+
+def GIT_REPO_URL = "https://github.com/SalientCRGT/scrgt-bdso-cc-frontend.git";
+
+def CREDENTIALS_ID = 'GitHubAccessToken';
+
+
+
+
+node {
+
+    try {
+      stage ('Initialize') {
+
+        // Git Checkout the CI Branch
+        checkout([$class: 'GitSCM',
+        branches: [[name: GIT_BRANCH]],
+        doGenerateSubmoduleConfigurations: false,
+        extensions: [[$class: 'WipeWorkspace']], submoduleCfg: [],
+        userRemoteConfigs: [[credentialsId: CREDENTIALS_ID, url: GIT_REPO_URL]]])
+
+
+      }
+      stage ('Pull from Nexus') {
+
+        println "====Pull from Nexus ====="
+        withEnv(['MS_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE+':'+SERVICE_VERSION]) {
+          withCredentials([
+            [$class: 'UsernamePasswordMultiBinding',
+            credentialsId:DOCKER_HUB_TOKEN,
+            passwordVariable:'DOCKER_PASSWORD',
+            usernameVariable:'DOCKER_USERNAME']
+            ]) {
+            sh returnStdout: false, script: '''
+              docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+              echo ${MS_IMAGE_ID}
+              docker pull salientcrgt2/ft_base_chrome:latest
+              '''
+            }
+          }
+        }
+      withEnv(['SERVICE_IMAGE=' + SERVICE_IMAGE,
+        'MS_IMAGE_ID='+ SERVICE_IMAGE+':'+SERVICE_VERSION,
+        'SERVICE_CONTAINER=' + SERVICE_IMAGE+'_'+SERVICE_VERSION+'_C']) {
+          stage ('Build') {
+            println "====Build ====="
+            sh returnStdout: false, script: '''
+            cd $WORKSPACE/Tests/serenity
+            docker build -t ${MS_IMAGE_ID} .
+            '''
+            println "====Build done, compile reports ====="
+
+            // Retrieve reports from multistage images, copy to host and remove the auxiliary images
+            sh returnStdout: false, script: '''
+              cd $WORKSPACE/Tests/serenity
+              mkdir results
+              docker create --name ${SERVICE_CONTAINER} ${MS_IMAGE_ID}
+              docker cp ${SERVICE_CONTAINER}:/usr/app/target/site/serenity ./results
+              docker images -a | grep ${SERVICE_IMAGE} | awk '{print $3}' | xargs docker rmi -f
+            '''
+
+          }
+
+      }
+      stage ('Publish Serenity reports') {
+        // publish the reports
+
+        publishHTML (target: [
+          allowMissing: true,
+          alwaysLinkToLastBuild: false,
+          keepAll: true,
+          reportDir: 'Tests/serenity/results/serenity',
+          reportFiles: 'index.html',
+          reportName: "Serenity Report",
+          includes: '**/*'
+        ])
+
+      }
+
+
+
+    }
+    finally {
+      stage('Finalize') {
+
+      }
+    }
+
+}

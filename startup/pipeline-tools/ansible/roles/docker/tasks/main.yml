@@ -1,0 +1,41 @@
+
+#    - name: Add docker repository
+#      yum_repository:
+#        name: docker-centos
+#        description: docker community repo
+#        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+#        state: present
+#        gpgcheck: no
+
+    - name: install docker
+      become: true
+      yum:
+        name: docker
+        state: latest
+
+    - name: install docker-compose
+      become: true
+      shell: |
+        curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+
+    - name: Ensure group "docker" exists
+      become: true
+      group:
+        name: docker
+        state: present
+
+    - name: add centos to the docker group
+      become: true
+      user: name=ec2-user
+            groups=docker
+            append=yes
+
+    - name: start the docker daemon
+      become: true
+      systemd:
+        name: docker
+        enabled: yes
+        masked: no
+        daemon_reload: yes
+        state: started

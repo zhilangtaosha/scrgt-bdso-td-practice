@@ -1,0 +1,73 @@
+@startuml Data Science Pipeline
+
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v4.0/dist
+!includeurl AWSPuml/AWSCommon.puml
+
+' Uncomment the following line to create simplified view
+'!includeurl AWSPuml/AWSSimplified.puml
+
+!includeurl AWSPuml/General/Users.puml
+!includeurl AWSPuml/Mobile/APIGateway.puml
+!includeurl AWSPuml/SecurityIdentityAndCompliance/Cognito.puml
+!includeurl AWSPuml/Compute/Lambda.puml
+!includeurl AWSPuml/Database/DynamoDB.puml
+!includeurl AWSPuml/Analytics/ElasticsearchService.puml
+!includeurl AWSPuml/Database/Neptune.puml
+!includeurl AWSPuml/Database/RDS.puml
+!includeurl AWSPuml/Storage/S3Bucket.puml
+!includeurl AWSPuml/MachineLearning/MachineLearning.puml
+!includeurl AWSPuml/MachineLearning/SageMakerNotebook.puml
+!includeurl AWSPuml/GroupIcons/Cloud.puml
+
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.1.0
+!includeurl ICONURL/common.puml
+!includeurl ICONURL/font-awesome/server.puml
+!includeurl ICONURL/font-awesome-5/list.puml
+!includeurl ICONURL/dev2/angularjs.puml
+!includeurl ICONURL/dev2/java.puml
+!includeurl ICONURL/dev2/angularjs.puml
+!includeurl ICONURL/dev2/docker.puml
+!includeurl ICONURL/dev2/python.puml
+!include ICONURL/devicons/github.puml
+!include ICONURL/devicons/jenkins.puml
+skinparam componentStyle uml2
+left to right direction
+
+
+skinparam componentStyle uml2
+left to right direction
+
+Users(users, "Data Scientis", "develop notebooks")
+DEV2_ANGULARJS(frontend,Front End) #BlueViolet
+MachineLearning(model, "Model", "AI/ML")
+SageMakerNotebook(datascienceNotebook, "Datascience Notebook", "Model development")
+DEV2_PYTHON(modelMSCode, "Model Microservice Code") 
+DEV2_DOCKER(docker, "Dockerfile")
+DEV_GITHUB(github, "Github")
+DEV_JENKINS(jenkins, "Jenkins")
+FA_SERVER(nexus,Github)
+
+  node "Openshift" #LightPink {
+    DEV2_ANGULARJS(frontend,Front End) #BlueViolet
+    DEV2_PYTHON(modelMS, "Model Microservice")
+  }
+
+
+users --> datascienceNotebook
+datascienceNotebook --> model
+model --> modelMSCode : pickle
+
+modelMSCode --> docker : package
+modelMSCode --> github : commit
+docker --> github : commit
+
+github --> jenkins : trigger build
+
+jenkins --> nexus : docker imgage
+jenkins --> modelMS : deploy to openshift
+nexus --> modelMS : packed model
+frontend <--> modelMS :invoke
+
+
+@enduml
+

@@ -1,0 +1,66 @@
+<div class="basic-container">
+
+  <!-- Search Component-->
+  <div class="search" style="padding-left: 15%;">
+    <app-search [canEdit]="canEdit" (search)="onSearch($event)"></app-search>
+  </div>
+
+  <app-page *ngIf="!stateReady">
+    <div app-page-content>
+      <ng-container>
+        <app-loading-indicator></app-loading-indicator>
+      </ng-container>
+    </div>
+  </app-page>
+
+  <!-- Celebrities Component -->
+  <app-page *ngIf="stateReady">
+    <div app-page-content>
+
+      <ng-container *ngIf="showAllCelebs">
+        <ng-container *ngTemplateOutlet="allCelebs"></ng-container>
+      </ng-container>
+
+      <ng-container *ngIf="showSearchResult">
+        <ng-container *ngTemplateOutlet="searchresults"></ng-container>
+      </ng-container>
+
+
+      <!--show all celebrities-->
+      <ng-template #allCelebs>
+        <div class="search-results-s" infinite-scroll [infiniteScrollDistance]="scrollDistance"
+          [infiniteScrollUpDistance]="scrollUpDistance" [infiniteScrollThrottle]="throttle"
+          (scrolled)="onScrollDown($event)" (scrolledUp)="onUp($event)">
+          <ng-container *ngFor="let row of celebRows; let r = index">
+            <div class="row" style="margin: 30px 30px;">
+              <ng-container *ngFor="let item of row.items">
+                <div class="col-lg-3">
+                  <div id="{{'card-'+r+'-'}}" class="card" [class.card-clicked]="item.id === displayId && showCelebDetail"
+                    (click)="showDetail(item.id, item.birthName, r)">
+                    <div class="view">
+                        <img id="{{'cardImg-'+r+'-'}}" style="height: 300px; width: 250px; margin-left: 15%" src="{{  item.imageUrl }}" alt="{{item.birthName}}">
+                    </div>
+                    <h4 style="text-align: center; color: #fff;">{{ item.firstName }} {{ item.lastName }}</h4>
+                  </div>
+                </div>
+
+              </ng-container>
+
+              <!--dynamic component-->
+              <div *ngIf="r == displayRow && showCelebDetail" style="margin: 5% 0 10% 10%;" appAutoFocus>
+                <app-celebrity [canEdit]="canEdit" [celebDetails]="celebDetails" [displayedRow]="displayRow" (recommendation)="onRecommendationClicked($event)"></app-celebrity>
+                </div>
+
+            </div>
+          </ng-container>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Search-Result Component -->
+    <ng-template #searchresults>
+      <app-search-result [searchResults]="searchResults"></app-search-result>
+    </ng-template>
+  </app-page>
+
+</div>

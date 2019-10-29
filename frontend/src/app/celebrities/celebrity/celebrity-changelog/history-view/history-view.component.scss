@@ -1,0 +1,62 @@
+h1,h2 {
+    color: black;
+    font-weight: bold
+}
+
+h1 {
+    font-size: 2 rem;
+}
+
+h2 {
+    font-size: 1.5 rem;
+}
+
+thead > tr {
+    background-color: #A3A4A4;
+    color: white;
+    font-size: 16px;
+}
+
+tbody > tr {
+    font-size: 14px;
+}
+
+
+.container{
+    color: black;
+    font-family: NunitoSans-Regular, Nunito Sans;
+}
+
+.center {
+    text-align: center
+}
+
+.scrollable{
+    max-height: 30em;
+    overflow-y: auto;
+}
+
+.row.vdivide [class*='col-']:not(:last-child):after {
+    background:rgba(0,0,0,.1);
+    width: 1px;
+    content: "";
+    display:block;
+    position: absolute;
+    top:0;
+    bottom: 0;
+    right: 0;
+    min-height: 30px;
+}
+
+#bioceleb-logo{
+    width: 350px;
+}
+
+:host ::ng-deep .highlight {
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+#footer {
+    margin-top: 15px;
+}

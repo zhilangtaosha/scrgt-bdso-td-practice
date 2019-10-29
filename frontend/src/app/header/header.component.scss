@@ -1,0 +1,34 @@
+.header-note, .logged-user {
+  margin-left: 30px;
+  font-family: Nunito Sans;
+  color: #fff;
+}
+
+.header-note {
+  font-weight: 300;
+  font-size: 36px;
+  letter-spacing: 1.5px;
+}
+
+.logged-user {
+  margin-right: 30px;
+  font-size: 18px;
+  font-weight: 200;
+  letter-spacing: 0.5px;
+  margin-top: 10px;
+  color: #fff;
+}
+
+.header-icons {
+  font-size: 0.5em;
+}
+
+.fill-space {
+  flex: 1 1 auto;
+}
+
+#expLabel {
+  background: #212121;
+  color: #fff;
+}
+

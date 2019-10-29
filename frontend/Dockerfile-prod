@@ -1,0 +1,53 @@
+######################## Base Container ########################
+FROM salientcrgt2/ng_base:latest as base
+ARG build
+LABEL build=base_${build}
+LABEL buildproject=bdso_ng
+#LABEL image=base
+
+# add `/app/node_modules/.bin` to $PATH
+ENV PATH /app/node_modules/.bin:$PATH
+
+WORKDIR /app/
+
+RUN ls -l
+
+COPY . /app/
+
+## Build the angular app in production mode and store the artifacts in dist folder
+RUN npm install && npm run build
+
+
+######################## Test Container ########################
+FROM base as test
+ARG build
+LABEL build=test_${build}
+#LABEL image=test
+LABEL buildproject=bdso_ng
+
+ENV DISPLAY=:99 CHROME_BIN=/usr/bin/chromium-browser LIGHTHOUSE_CHROMIUM_PATH=/usr/bin/chromium-browser
+
+##RUN nohup bash -c "/usr/bin/Xvfb :99 &" && \
+##   ng test --watch=false --code-coverage
+
+
+######################## Release Container ########################
+FROM nginx:1.16.0-alpine as release
+
+## Remove default nginx website
+RUN rm -rf /usr/share/nginx/html/*
+
+## From base stage copy over the artifacts in dist folder and default nginx public folder
+COPY --from=base /app/dist /usr/share/nginx/html
+
+COPY --from=base /app/.nginx-def.conf /etc/nginx/conf.d/default.conf
+
+# support running as arbitrary user which belogs to the root group
+RUN chmod g+rwx /var/cache/nginx /var/run /var/log/nginx
+# users are not allowed to listen on priviliged ports
+RUN sed -i.bak 's/listen\(.*\)80;/listen 8081;/' /etc/nginx/conf.d/default.conf
+EXPOSE 8081
+# comment user directive as master process is run as user in OpenShift anyhow
+RUN sed -i.bak 's/^user/#user/' /etc/nginx/conf.d/default.conf
+
+ENTRYPOINT ["nginx", "-g", "daemon off;"]

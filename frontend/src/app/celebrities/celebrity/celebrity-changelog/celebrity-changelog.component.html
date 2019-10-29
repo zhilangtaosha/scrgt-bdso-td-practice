@@ -1,0 +1,25 @@
+<div class="table-responsive table-wrapper">
+    <table class="data-table table table-bordered">
+        <thead>
+            <tr>
+                <th id="fieldHd" scope="col">Field Name</th>
+                <th id="dateHd" scope="col">Change Date</th>
+                <th id="nameHd" scope="col">Who Made the Change</th>
+                <th id="viewHd" scope="col">View Changelog</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let source of changeLogData; let id=index">
+                <td id="{{'field'+id}}">{{source.fieldName}}</td>
+                <td id="{{'date'+id}}" class="centered">{{source.changeDate | date: 'MM/dd/yyyy'}} &bull; {{source.changeDate | date: 'hh:mm a'}}</td>
+                <td id="{{'name'+id}}">{{source.changedBy}}</td>
+                <td class="centered">
+                    <button id="{{'view'+id}}"class="view-btn" (click)="openView(source)">
+                        <img src="../../../assets/eye.png">
+                        <span>VIEW</span>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

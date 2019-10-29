@@ -1,0 +1,54 @@
+@startuml
+Title Data Load at Cluster Startup
+
+left to right direction
+
+"Data Scientist" --> Github
+
+Github --> "Startup Script" 
+
+Partition prod {
+    "Startup Script" -> "celebrity-content-prod s3 Bucket"
+    note bottom: "Copy pre-processed github data at start up"
+    "celebrity-content-prod s3 Bucket" --> "Data Loader (prod)"
+    "Data Loader (prod)" --> "Celebrity Microservice (prod)"
+    "Celebrity Microservice (prod)" --> "Elastic Search prod"  
+     note right: Store source IMDB, Wikipedia, MovieDB data
+    "Celebrity Microservice (prod)" --> "Postgres prod"
+    note left: Copy IMDB data
+    "Celebrity Microservice (prod)" --> "Front end prod" 
+    note right: Display data through UI
+}
+
+
+Partition test {
+    "Startup Script" -> "celebrity-content-test s3 Bucket"
+    note bottom: "Copy pre-processed github data at start up"
+    "celebrity-content-test s3 Bucket" --> "Data Loader (test)"
+    "Data Loader (test)" --> "Celebrity Microservice (test)"
+    "Celebrity Microservice (test)" --> "Elastic Search (test)"  
+     note right: Store source IMDB, Wikipedia, MovieDB data
+    "Celebrity Microservice (test)" --> "Postgres (test)"
+    note left: Copy IMDB data
+    "Celebrity Microservice (test)" --> "Front end (test)" 
+    note right: Display data through UI
+}
+
+
+Partition dev {
+    "Startup Script" -> "celebrity-content-dev s3 Bucket"
+    note bottom: "Copy pre-processed github data at start up"
+    "celebrity-content-dev s3 Bucket" --> "Data Loader (dev)"
+    "Data Loader (dev)" --> "Celebrity Microservice (dev)"
+    "Celebrity Microservice (dev)" --> "Elastic Search Dev"  
+     note right: Store source IMDB, Wikipedia, MovieDB data
+    "Celebrity Microservice (dev)" --> "Postgres Dev"
+    note left: Copy IMDB data
+    "Celebrity Microservice (dev)" --> "Front end Dev" 
+    note right: Display data through UI
+}
+
+
+
+
+@enduml

@@ -1,0 +1,268 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Builds out EMR Cluster
+Conditions:
+  WithSpotPrice:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: SpotPrice
+      - '0'
+Parameters:
+  ApplicationName:
+    Description: 'EMR Cluster Name'
+    Type: String
+    Default: BDSO-EMR
+  CoreInstanceCount:
+    Description: Number of core instances
+    Type: String
+    Default: 1
+  EmrVersion:
+    Description: Version of EMR
+    Type: String
+    Default: emr-5.21.0
+  MasterInstanceType:
+    Description: Instance type of Master Node
+    Type: String
+    Default: p2.xlarge
+    #Default: m4.xlarge
+  CoreInstanceType:
+    Description: Instance type of Core Node
+    Type: String
+    Default: m4.large
+  TaskInstanceType:
+    Description: Instance type of Core Node
+    Type: String
+    Default: m4.large
+  VPC:
+    Description: VPC ID
+    Type: String
+    Default: vpc-b9e413de
+  SubnetID:
+    Description: Subnet ID
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-3aa6f507
+  SpotPrice:
+    Default: '.90'
+    Description: Spot price (or use 0 for on demand instance)
+    Type: Number
+  S3BucketName:
+    Default: bdso-jupyter
+#    Default: !Join
+#      - "-"
+#      - !Select [1, !Split [-, !Ref VPC ]]
+#      - !Sub "bdso-jupyter"
+    Description: Bucket used for persistent notebook storage
+    Type: String
+#  SSHKey:
+#    Default: ttb-mac-us-east-2
+#    Type: String
+#    Description: SSH Key for Master Instance
+  TerminationProtection:
+    Default: 'false'
+    Description: Protect the cluster from automatic termination upon master instance failure or shutdown
+    Type: String
+Resources:
+  EMRClusterAdditionalSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ssh and 9443 connections
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '9443'
+        ToPort: '9443'
+        CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: Name
+        Value:
+          Ref: ApplicationName
+      - Key: Application
+        Value:
+          Ref: ApplicationName
+  MyEMRCluster:
+    DependsOn:
+    - EMRClusterAdditionalSG
+    - EMRDefaultRole
+    - EMRAutoScalingDefaultRole
+    - EMREC2DefaultRole
+    - EMREC2InstanceProfile
+    Type: AWS::EMR::Cluster
+    Properties:
+      Applications:
+      - Name: JupyterHub
+      Configurations:
+      - Classification: jupyter-s3-conf
+        ConfigurationProperties:
+          s3.persistence.enabled: true
+          s3.persistence.bucket:
+            Ref: S3BucketName
+      Instances:
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType:
+            Ref: MasterInstanceType
+          Market: ON_DEMAND
+          Name: Master
+        CoreInstanceGroup:
+          InstanceCount:
+            Ref: CoreInstanceCount
+          InstanceType:
+            Ref: CoreInstanceType
+          EbsConfiguration:
+            EbsBlockDeviceConfigs:
+            - VolumeSpecification:
+                SizeInGB: '32'
+                VolumeType: gp2
+              VolumesPerInstance: '1'
+            EbsOptimized: 'true'
+          BidPrice:
+            Fn::If:
+            - WithSpotPrice
+            - Ref: SpotPrice
+            - Ref: AWS::NoValue
+          Market:
+            Fn::If:
+            - WithSpotPrice
+            - SPOT
+            - ON_DEMAND
+          Name: Core
+#        Ec2KeyName:
+#          Ref: SSHKey
+        TerminationProtected: !Ref TerminationProtection
+        AdditionalMasterSecurityGroups:
+        - Ref: EMRClusterAdditionalSG
+        Ec2SubnetId:
+          Ref: SubnetID
+      JobFlowRole: EMR_EC2_DefaultRole
+      ServiceRole: EMR_DefaultRole
+      AutoScalingRole: EMR_AutoScaling_DefaultRole
+      LogUri:
+        Fn::Sub:
+          - ${urlhead}${bucketname}${urltail}
+          - {urlhead: 's3://', bucketname: !Ref S3BucketName, urltail: '/jupyter-logs'}
+      Name:
+        Ref: ApplicationName
+      ReleaseLabel:
+        Ref: EmrVersion
+      Tags:
+      - Key: AppID
+        Value:
+          Ref: ApplicationName
+      - Key: Name
+        Value:
+          Ref: ApplicationName
+      VisibleToAllUsers: true
+#  TaskInstanceGroupConfig:
+#    Type: AWS::EMR::InstanceGroupConfig
+#    Properties:
+#      InstanceCount: 1
+#      InstanceType:
+#        Ref: TaskInstanceType
+#      InstanceRole: TASK
+#      Market: SPOT
+#      Name: EMRGroup
+#      BidPrice:
+#        Fn::If:
+#        - WithSpotPrice
+#        - Ref: SpotPrice
+#        - Ref: AWS::NoValue
+#      JobFlowId:
+#        Ref: MyEMRCluster
+  EMREC2InstanceProfile:
+    DependsOn:
+    - EMREC2DefaultRole
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: EMR_EC2_DefaultRole
+      Roles:
+      - EMR_EC2_DefaultRole
+  EMREC2DefaultRole:
+    Properties:
+      RoleName: EMR_EC2_DefaultRole
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role
+      - arn:aws:iam::aws:policy/AmazonSSMFullAccess
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+    Type: AWS::IAM::Role
+
+  EMRDefaultRole:
+    Properties:
+      RoleName: EMR_DefaultRole
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - elasticmapreduce.amazonaws.com
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole
+    Type: AWS::IAM::Role
+
+  EMRAutoScalingDefaultRole:
+    Properties:
+      RoleName: EMR_AutoScaling_DefaultRole
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - elasticmapreduce.amazonaws.com
+            - application-autoscaling.amazonaws.com
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole
+    Type: AWS::IAM::Role
+
+  CreateUserStep1:
+    Type: AWS::EMR::Step
+    DependsOn:
+    - MyEMRCluster
+    Properties:
+      ActionOnFailure: CONTINUE
+      HadoopJarStep:
+        Args:
+        - !Sub "s3://${S3BucketName}/bootstrap_jupyter.sh"
+        Jar: !Sub s3://${AWS::Region}.elasticmapreduce/libs/script-runner/script-runner.jar
+      Name: Install Packages
+      JobFlowId:
+        Ref: MyEMRCluster
+
+  SSMParameterRDSProdUser:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "NotebookURL"
+      Type: "String"
+      Value:
+        Fn::Sub:
+        - ${prefix}${myURL}${portNumber}
+        - {prefix: 'https://', myURL: !GetAtt MyEMRCluster.MasterPublicDNS, portNumber: ':9443' }
+    Description: URL of Jupyter Notebook
+Outputs:
+  EMRMasterNotebookURL:
+    Description: URL of the Jupyter notebook
+    Value:
+      Fn::Sub:
+      - ${prefix}${myURL}${portNumber}
+      - {prefix: 'https://', myURL: !GetAtt MyEMRCluster.MasterPublicDNS, portNumber: ':9443' }
+  EMRSecurityGroup:
+    Description: EMR security group to allow communication with default security group.
+    Value:
+      Fn::GetAtt:
+        - EMRClusterAdditionalSG
+        - GroupId

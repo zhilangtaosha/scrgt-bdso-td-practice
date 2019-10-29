@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: bdso-celebrity-deploy-template
+
+parameters:
+- name: APP_NAME
+  description: "The app name"
+  required: true
+  value: scrgt-bdso-cc-ms-celebrity
+- name: APP_VERSION
+  description: "The app version"
+  required: true
+- name: PROJECT_NAME
+  description: "The project name"
+  required: true
+  value: scrgt-bdso-cc-ms-celebrity
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      app: ${APP_NAME}
+      version: ${APP_VERSION}
+    name: ${APP_NAME}
+  spec:
+    replicas: 1
+    selector:
+      app: ${APP_NAME}
+      deploymentconfig: ${APP_NAME}
+      version: ${APP_VERSION}
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+        creationTimestamp: null
+        labels:
+          app: ${APP_NAME}
+          deploymentconfig: ${APP_NAME}
+          version: ${APP_VERSION}
+      spec:
+        containers:
+        - env:
+            - name: AWS_S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_S3_BUCKET
+                  name: bdso-secret
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_ACCESS_KEY_ID
+                  name: bdso-secret
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_SECRET_ACCESS_KEY
+                  name: bdso-secret
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_REGION
+                  name: bdso-secret
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_DB_HOST
+                  name: bdso-secret
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_DB_PORT
+                  name: bdso-secret
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_DB_PASSWORD
+                  name: bdso-secret
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_DB_USERNAME
+                  name: bdso-secret
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_DB_NAME
+                  name: bdso-secret
+            - name: ES_CLUSTER
+              valueFrom:
+                secretKeyRef:
+                  key: ES_68_CLUSTER
+                  name: bdso-secret
+            - name: ES_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: ES_68_HOST
+                  name: bdso-secret
+            - name: ES_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: ES_68_PORT
+                  name: bdso-secret
+            - name: ES_HC_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: ES_68_HC_PORT
+                  name: bdso-secret
+            - name: KECLOAK_URL
+              valueFrom:
+                secretKeyRef:
+                  key: KECLOAK_URL
+                  name: bdso-secret
+            - name: SECURITY_ENABLED
+              valueFrom:
+                secretKeyRef:
+                  key: SECURITY_ENABLED
+                  name: bdso-secret
+          image: ${APP_NAME}:${APP_VERSION}
+          imagePullPolicy: Always
+          name: ${APP_NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 100
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 100
+            periodSeconds: 30
+            timeoutSeconds: 10
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${APP_NAME}:${APP_VERSION}
+      type: ImageChange
+    - type: ConfigChange
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    to:
+      kind: Service
+      name: ${APP_NAME}
+      weight: 100
+    tls:
+      termination: edge
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: ${APP_NAME}
+      deploymentconfig: ${APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP

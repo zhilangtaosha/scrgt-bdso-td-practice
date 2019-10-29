@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    jenkins_admin: "shawn@virtualintelligence.ai"
+  roles:
+     - common
+     - docker
+     - jenkins

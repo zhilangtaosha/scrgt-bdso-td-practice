@@ -1,0 +1,21 @@
+@startuml
+Title Nightly Scheduled Data Refresh
+
+left to right direction
+
+"Scheduler" --> "Content Scrapper Notebook"
+
+Partition prod {
+    "Content Scrapper Notebook" -> "celebrity-content-prod s3 Bucket"
+    note bottom: "Downlaod scrapped data"
+    "celebrity-content-prod s3 Bucket" --> "Data Loader (prod)"
+    "Data Loader (prod)" --> "Celebrity Microservice (prod)"
+    "Celebrity Microservice (prod)" --> "Elastic Search prod"  
+     note right: Store source IMDB, Wikipedia, MovieDB data
+    "Celebrity Microservice (prod)" --> "Postgres prod"
+    note left: Copy IMDB data
+    "Celebrity Microservice (prod)" --> "Front end prod" 
+    note right: Display data through UI
+}
+
+@enduml

@@ -1,0 +1,265 @@
+#!groovy
+
+def SERVICE_VERSION = env.BUILD_NUMBER
+def SERVICE_IMAGE = "scrgt-bdso-cc-frontend";
+def TEST_IMAGE = "functional-frontend";
+def API_TEST_IMAGE = "api-test";
+def OCP_IMAGE = null;
+def DOCKER_REGISTRY = "salientcrgt2"
+def DOCKER_HUB_TOKEN = "docker-login"
+
+def CommonGroovyTasks = null;
+def CREDENTIALS_ID = 'GitHubAccessToken';
+
+
+def OCP_CLUSTER_TOKEN="ocpToken"
+def OCP_CLUSTER="OCP_CLUSTER"
+def OCP_PROJECT="celebrity"
+
+
+def DOCKER_TOKEN='nexusToken'
+
+
+node {
+
+    try {
+      stage ('Initialize') {
+
+        // Git Checkout the CI Branch
+        checkout([$class: 'GitSCM',
+        branches: [[name: GIT_BRANCH]],
+        doGenerateSubmoduleConfigurations: false,
+        extensions: [[$class: 'WipeWorkspace']], submoduleCfg: [],
+        userRemoteConfigs: [[credentialsId: CREDENTIALS_ID, url: GIT_REPO_URL]]])
+
+        println "====Pull base image from Docker Hub ====="
+          withCredentials([
+            [$class: 'UsernamePasswordMultiBinding',
+            credentialsId:DOCKER_HUB_TOKEN,
+            passwordVariable:'DOCKER_PASSWORD',
+            usernameVariable:'DOCKER_USERNAME']
+            ]) {
+            sh returnStdout: false, script: '''
+              docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+              docker pull salientcrgt2/ng_base:latest
+              docker pull salientcrgt2/ft_base_chrome:latest
+              '''
+            }
+
+
+      }
+
+      stage ('Build, Test, SonarQube') {
+        sh returnStdout: false, script: '''
+          pushd ${WORKSPACE}/src/environments
+            for file in *
+            do
+              sed -i "s/DOMAIN/$DOMAIN/g" ${file}
+            done
+          popd
+          '''
+          withEnv(['MS_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE,
+            'BNUMBER=' + env.BUILD_NUMBER]) {
+              withSonarQubeEnv('BDSOSonar') {
+                println "====Build ====="
+                sh returnStdout: false, script: '''
+                  cd $WORKSPACE/
+                  echo ${SONAR_HOST_URL}
+                  for ENV in dev test prod
+                  do
+                    docker build -f Dockerfile-dev --rm=false --build-arg "build=${BNUMBER}" --build-arg "SONAR_HOST=${SONAR_HOST_URL}" -t ${MS_IMAGE_ID}-${ENV}:${BNUMBER} .
+                  done
+                  '''
+                println "====Build done, compile reports ====="
+
+                // Retrieve reports from multistage images, copy to host and remove the auxiliary images
+                // sh returnStdout: false, script: '''
+                //   mkdir results
+                //
+                //   docker cp $(docker ps -a --format "{{.ID}}" -f "label=build=test_${BNUMBER}" -f "status=exited"):app/coverage ./results/coverage
+                // '''
+
+                // publish the reports
+
+                publishHTML (target: [
+                  allowMissing: true,
+                  alwaysLinkToLastBuild: false,
+                  keepAll: true,
+                  reportDir: 'results/coverage/scrgt-bdso-cc-frontend',
+                  reportFiles: 'index.html',
+                  reportName: "Jasmine Karma Test Report",
+                  includes: '**/*'
+                ])
+
+              }
+
+          }
+
+      }
+
+      stage ('OWASP Dependency Check') {
+        dependencyCheck additionalArguments: '', odcInstallation: 'default 5.2.1 '
+        dependencyCheckPublisher pattern: ''
+        archiveArtifacts 'dependency-check-report.xml'
+      }
+
+      stage ('Push to DockerHub') {
+
+        println "====Push to DockerHub ====="
+        withEnv(['MS_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE,
+        'BNUMBER='+SERVICE_VERSION]) {
+          withCredentials([
+            [$class: 'UsernamePasswordMultiBinding',
+            credentialsId:DOCKER_HUB_TOKEN,
+            passwordVariable:'DOCKER_PASSWORD',
+            usernameVariable:'DOCKER_USERNAME']
+            ]) {
+            sh returnStdout: false, script: '''
+              docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+              echo ${MS_IMAGE_ID}
+              for ENV in dev test prod
+              do
+                docker push ${MS_IMAGE_ID}-${ENV}:${BNUMBER}
+                docker tag ${MS_IMAGE_ID}-${ENV}:${BNUMBER} ${MS_IMAGE_ID}-${ENV}:latest
+                docker push ${MS_IMAGE_ID}-${ENV}:latest
+              done
+              '''
+            }
+          }
+        }
+        stage ('Deploy To Dev') {
+          println "==== Deploy To Dev ====="
+          DEPLOY_ENV="dev"
+          deployToEnv(DEPLOY_ENV, DOCKER_REGISTRY, SERVICE_IMAGE, SERVICE_VERSION, OCP_URL, OCP_CLUSTER_TOKEN);
+        }
+
+        stage ('API Tests') {
+          println "==== API Tests ====="
+          withEnv(['API_SERVICE_IMAGE=' + API_TEST_IMAGE,
+            'API_IMAGE_ID='+ API_TEST_IMAGE+':'+SERVICE_VERSION,
+            'API_CONTAINER=' + API_TEST_IMAGE+'_'+SERVICE_VERSION+'_C']) {
+
+                println "==== API Build ====="
+                sh returnStdout: false, script: '''
+                cd $WORKSPACE/apitest/APITestRestAssured/RestAssuredProj/
+                docker build -t ${API_IMAGE_ID} --build-arg "API_DEV_URL=${API_DEV_URL}" .
+                '''
+                println "====API Build done, compile reports ====="
+
+                // Retrieve reports from multistage images, copy to host and remove the auxiliary images
+                sh returnStdout: false, script: '''
+                  cd $WORKSPACE/apitest/APITestRestAssured/RestAssuredProj/
+                  mkdir results
+                  docker create --name ${API_CONTAINER} ${API_IMAGE_ID}
+                  docker cp ${API_CONTAINER}:/usr/app/build/reports/tests/test ./results
+                '''
+
+
+            // publish the reports
+
+            publishHTML (target: [
+              allowMissing: true,
+              alwaysLinkToLastBuild: false,
+              keepAll: true,
+              reportDir: 'apitest/APITestRestAssured/RestAssuredProj/results/test',
+              reportFiles: 'index.html',
+              reportName: "API Test Report",
+              includes: '**/*'
+            ])
+
+          }
+
+
+        }
+        stage ('Deploy To Test') {
+          println "==== Deploy To Test ====="
+          DEPLOY_ENV="test"
+          deployToEnv(DEPLOY_ENV, DOCKER_REGISTRY, SERVICE_IMAGE, SERVICE_VERSION, OCP_URL, OCP_CLUSTER_TOKEN);
+        }
+        stage ('Regression in Test Env') {
+          println "==== Regression in Test Env ====="
+          withEnv(['TEST_SERVICE_IMAGE=' + TEST_IMAGE,
+            'TEST_IMAGE_ID='+ TEST_IMAGE+':'+SERVICE_VERSION,
+            'TEST_CONTAINER=' + TEST_IMAGE+'_'+SERVICE_VERSION+'_C']) {
+
+                println "====Build ====="
+                sh returnStdout: false, script: '''
+                cd $WORKSPACE/FunctionalTests/serenity/
+                docker build -t ${TEST_IMAGE_ID} --build-arg "FRONTEND_DEV_URL=${FRONTEND_DEV_URL}" .
+                '''
+                println "====Build done, compile reports ====="
+
+                // Retrieve reports from multistage images, copy to host and remove the auxiliary images
+                sh returnStdout: false, script: '''
+                  cd $WORKSPACE/FunctionalTests/serenity/
+                  mkdir results
+                  docker create --name ${TEST_CONTAINER} ${TEST_IMAGE_ID}
+                  docker cp ${TEST_CONTAINER}:/usr/app/target/site/serenity ./results
+                '''
+
+
+            // publish the reports
+
+            publishHTML (target: [
+              allowMissing: true,
+              alwaysLinkToLastBuild: false,
+              keepAll: true,
+              reportDir: 'FunctionalTests/serenity/results/serenity',
+              reportFiles: 'index.html',
+              reportName: "Functional Test Report",
+              includes: '**/*'
+            ])
+
+          }
+
+
+        }
+        stage ('Deploy To Prod') {
+          println "==== Deploy To Prod ====="
+          DEPLOY_ENV="prod"
+          deployToEnv(DEPLOY_ENV, DOCKER_REGISTRY, SERVICE_IMAGE, SERVICE_VERSION, OCP_URL, OCP_CLUSTER_TOKEN);
+        }
+    }
+    finally {
+      stage('Finalize') {
+        sh 'docker system prune -f'
+      }
+    }
+
+}
+
+
+def deployToEnv(deploy_env, docker_registry, service_image, service_version, ocp_url, ocp_cluster_token) {
+  println "==== Deploy To ENV ===== "
+  withEnv(['MS_IMAGE_ID=docker.io/'+ docker_registry+'/'+service_image+'-'+deploy_env+':'+service_version,
+  'IMAGETAG='+ service_image+':'+service_version,
+  'OCP_URL='+ ocp_url,
+  'APP_NAME='+service_image,
+  'APP_VERSION='+service_version,
+  'DEPLOY_ENV='+deploy_env]) {
+
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding',
+      credentialsId:ocp_cluster_token,
+      passwordVariable:'OCP_PASSWORD',
+      usernameVariable:'OCP_USERNAME']
+      ]) {
+        sh """
+            oc login --username=${env.OCP_USERNAME} --password=${env.OCP_PASSWORD} --insecure-skip-tls-verify ${OCP_URL}
+
+            echo ${MS_IMAGE_ID}
+            oc project ${DEPLOY_ENV}
+
+            oc import-image ${IMAGETAG} --from ${MS_IMAGE_ID} --confirm
+
+            oc process -f $WORKSPACE/openshift/deploy-template.yml \
+              -p APP_NAME=${APP_NAME} \
+              -p APP_VERSION=${APP_VERSION} \
+              -p PROJECT_NAME=${APP_NAME} \
+              | oc apply -f -
+          """
+      }
+
+    }
+
+}

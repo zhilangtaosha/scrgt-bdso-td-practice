@@ -1,0 +1,9 @@
+.terraform*
+*.pem
+*.pub
+*.crt
+*.tfstate
+*.tfstate.backup
+.DS_Store
+__pycache__
+vault.pass

@@ -1,0 +1,27 @@
+  - name: Ensures /opt/anchore/ dir exists
+    file: path=/opt/anchore/ state=directory
+
+  - name: copy docker-compose file
+    template:
+      src: "docker-compose.yaml"
+      dest: "/opt/anchore/docker-compose.yaml"
+      mode: 0644
+
+  - name: copy systemd file
+    copy:
+      src: "anchore.service"
+      dest: "/etc/systemd/system/anchore.service"
+      mode: 0644
+
+  - name: restart systemd
+    shell: |
+      systemctl daemon-reexec
+
+  - name: start the anchore daemon
+    become: true
+    systemd:
+      name: anchore
+      enabled: yes
+      masked: no
+      daemon_reload: yes
+      state: started

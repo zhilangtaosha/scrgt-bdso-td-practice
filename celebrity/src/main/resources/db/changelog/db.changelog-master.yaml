@@ -1,0 +1,15 @@
+databaseChangeLog:
+- include: {file: 2019-08/2019-08-27-create-table-movies.sql, relativeToChangelogFile: true}
+- include: {file: 2019-08/2019-08-27-create-table-actors.sql, relativeToChangelogFile: true}
+- include: {file: 2019-08/2019-08-27-create-table-movie_cast.sql, relativeToChangelogFile: true}
+- include: {file: 2019-08/2019-08-27-create-table-movie_genres.sql, relativeToChangelogFile: true}
+- include: {file: 2019-08/2019-08-27-create-table-companies.sql, relativeToChangelogFile: true}
+- include: {file: 2019-08/2019-08-27-create-table-movie_production.sql, relativeToChangelogFile: true}
+- include: {file: 2019-08/2019-08-30-alter-table-actors.sql, relativeToChangelogFile: true}
+- include: {file: 2019-09/2019-09-06-alter-table-actors.sql, relativeToChangelogFile: true}
+- include: {file: 2019-09/2019-09-06-alter-table-movies.sql, relativeToChangelogFile: true}
+- include: {file: 2019-09/2019-09-08-alter-table-actors.sql, relativeToChangelogFile: true}
+- include: {file: 2019-09/2019-09-09-alter-table-movies.sql, relativeToChangelogFile: true}
+- include: {file: 2019-09/2019-09-10-alter-table-actors.sql, relativeToChangelogFile: true}
+- include: {file: 2019-09/2019-09-10-alter-table-movies.sql, relativeToChangelogFile: true}
+- include: {file: 2019-09/2019-09-10-create-table-audit_log.sql, relativeToChangelogFile: true}

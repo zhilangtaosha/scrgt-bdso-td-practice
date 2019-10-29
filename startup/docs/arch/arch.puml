@@ -1,0 +1,73 @@
+@startuml TechnicalView
+
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/master/dist
+!includeurl AWSPuml/AWSCommon.puml
+
+' Uncomment the following line to create simplified view
+'!includeurl AWSPuml/AWSSimplified.puml
+
+!includeurl AWSPuml/General/Users.puml
+!includeurl AWSPuml/Mobile/APIGateway.puml
+!includeurl AWSPuml/SecurityIdentityAndCompliance/Cognito.puml
+!includeurl AWSPuml/Compute/Lambda.puml
+!includeurl AWSPuml/Database/DynamoDB.puml
+!includeurl AWSPuml/Analytics/ElasticsearchService.puml
+!includeurl AWSPuml/Database/Neptune.puml
+!includeurl AWSPuml/Database/RDS.puml
+!includeurl AWSPuml/Storage/S3Bucket.puml
+!includeurl AWSPuml/MachineLearning/MachineLearning.puml
+!includeurl AWSPuml/MachineLearning/SageMakerNotebook.puml
+
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.1.0
+!includeurl ICONURL/common.puml
+!includeurl ICONURL/font-awesome/server.puml
+!includeurl ICONURL/font-awesome-5/list.puml
+!includeurl ICONURL/dev2/angularjs.puml
+!includeurl ICONURL/dev2/java.puml
+skinparam componentStyle uml2
+left to right direction
+
+Users(users, "User", "Access BDSO.Celebrity")
+DEV2_ANGULARJS(frontend,Front End) #BlueViolet
+DEV2_JAVA(celebrityMS,Celebrity Microservice) 
+Cognito(userAuth, "User Authentication (Keycloak)", "JWT")
+ElasticsearchService(searchDb, "Search Database", "on entry per celebrity")
+
+S3Bucket(celebrityContent, "Celebrity Content", "Images, content ")
+
+RDS(celebrityDB, "Celebrity Database", "celebrity BIO")
+
+
+RDS(celebrityDB, "Celebrity Database", "user roles")
+
+FA5_LIST(celebrityList, "Top Celebrities")
+SageMakerNotebook(celebrityScrapper, "Scrape Celebrity Info", "Celebrity content")
+MachineLearning(MatchingProcessor, "Facial Recognition", "AI/ML")
+MachineLearning(celebrityRecommendation, "Celebrity recommendation", "AI/ML")
+SageMakerNotebook(datascienceNotebook, "Datascience Notebook", "Model development")
+
+
+
+users <--> userAuth
+users <--> frontend
+frontend <--> userAuth
+frontend <--> searchDb
+
+frontend <--> celebrityMS
+celebrityMS <--> celebrityDB
+celebrityMS <--> searchDb
+celebrityMS <--> celebrityContent
+
+
+celebrityList --> celebrityScrapper
+
+
+celebrityScrapper --> celebrityContent
+
+datascienceNotebook --> MatchingProcessor
+datascienceNotebook --> celebrityRecommendation
+
+frontend <--> MatchingProcessor
+frontend <--> celebrityRecommendation
+@enduml
+

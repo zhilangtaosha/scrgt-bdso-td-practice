@@ -1,0 +1,196 @@
+#!groovy
+
+def SERVICE_VERSION = env.BUILD_NUMBER
+def SERVICE_IMAGE = "scrgt-bdso-cc-ms-celebrity";
+def CREDENTIALS_ID = 'GitHubAccessToken';
+
+def OCP_CLUSTER_TOKEN="ocpToken"
+def OCP_CLUSTER="OCP_CLUSTER"
+def OCP_PROJECT="celebrity"
+
+def DEPLOY_ENV="dev"
+def DOCKER_REGISTRY = "salientcrgt2"
+def DOCKER_HUB_TOKEN = "docker-login"
+
+def SONARQUBE_TOKEN = "BDSO_SonarQube"
+
+node {
+
+    try {
+      stage ('Initialize') {
+
+        // Git Checkout the CI Branch
+        checkout([$class: 'GitSCM',
+        branches: [[name: GIT_BRANCH]],
+        doGenerateSubmoduleConfigurations: false,
+        extensions: [[$class: 'WipeWorkspace']], submoduleCfg: [],
+        userRemoteConfigs: [[credentialsId: CREDENTIALS_ID, url: GIT_REPO_URL]]])
+
+        println "====Pull from Nexus ====="
+        withEnv(['MS_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE+':'+SERVICE_VERSION]) {
+          withCredentials([
+            [$class: 'UsernamePasswordMultiBinding',
+            credentialsId:DOCKER_HUB_TOKEN,
+            passwordVariable:'DOCKER_PASSWORD',
+            usernameVariable:'DOCKER_USERNAME']
+            ]) {
+            sh returnStdout: false, script: '''
+              docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+              echo ${MS_IMAGE_ID}
+              docker pull salientcrgt2/gradle_base:latest
+              docker pull salientcrgt2/ft_base_chrome:latest
+              '''
+            }
+          }
+
+      }
+      withEnv(['BUILD_NUMBER=build=' + env.BUILD_NUMBER,
+        'BNUMBER=' + env.BUILD_NUMBER,
+        'MS_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE+':'+SERVICE_VERSION]) {
+          stage ('Build') {
+            println "====Build ====="
+
+            sh returnStdout: false, script: '''
+              cd $WORKSPACE/
+              docker build --rm=false --build-arg="${BUILD_NUMBER}" -t ${MS_IMAGE_ID} .
+            '''
+            println "====Build done, compile reports ====="
+
+            // Retrieve reports from multistage images, copy to host and remove the auxiliary images
+            sh returnStdout: false, script: '''
+              mkdir results
+              docker ps -a --format "{{.ID}}" -f "label=build=celebrity_ms_${BNUMBER}" -f "status=exited"
+              docker cp $(docker ps -a --format "{{.ID}}" -f "label=build=celebrity_ms_${BNUMBER}" -f "status=exited"):usr/app/build ./results
+              docker rm $(docker ps -a --format "{{.ID}}" -f "label=build=celebrity_ms_${BNUMBER}" -f "status=exited")
+            '''
+
+            // publish the reports using junit plugin
+            junit '**/results/build/test-results/**/*TEST-*.xml'
+
+            publishHTML (target: [
+              allowMissing: true,
+              alwaysLinkToLastBuild: false,
+              keepAll: true,
+              reportDir: 'results/build/reports/jacocoHtml',
+              reportFiles: 'index.html',
+              reportName: "Jacoco Code Coverage Report",
+              includes: '**/*'
+            ])
+
+          }
+      }
+
+      stage ('SonarQube') {
+        def scannerHome = tool 'BDSOSonarScanner';
+        withSonarQubeEnv('BDSOSonar') {
+          sh "${scannerHome}/bin/sonar-scanner"
+        }
+      }
+      
+      stage ('OWASP Dependency Check') {
+        dependencyCheck additionalArguments: '', odcInstallation: 'default 5.2.1 '
+        dependencyCheckPublisher pattern: ''
+        archiveArtifacts 'dependency-check-report.xml'
+      }
+
+      stage ('Anchore Vulnerability Scan') {
+        withEnv(['MS_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE+':'+SERVICE_VERSION]) {
+          catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            sh '''
+              cd $WORKSPACE
+              echo ${MS_IMAGE_ID}
+              chmod u+x ./inline_scan.sh
+              ./inline_scan.sh -t 500 -d ./Dockerfile -r ${MS_IMAGE_ID}
+            '''
+          }
+        }
+      }
+
+
+      stage ('Push to DockerHub') {
+
+        println "====Push to DockerHub ====="
+        withEnv(['MS_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE+':'+SERVICE_VERSION,
+            'LATEST_IMAGE_ID='+ DOCKER_REGISTRY+'/'+SERVICE_IMAGE+':latest']) {
+          withCredentials([
+            [$class: 'UsernamePasswordMultiBinding',
+            credentialsId:DOCKER_HUB_TOKEN,
+            passwordVariable:'DOCKER_PASSWORD',
+            usernameVariable:'DOCKER_USERNAME']
+            ]) {
+            sh returnStdout: false, script: '''
+              docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+              echo ${MS_IMAGE_ID}
+              docker push ${MS_IMAGE_ID}
+
+              docker tag ${MS_IMAGE_ID} ${LATEST_IMAGE_ID}
+              docker push ${LATEST_IMAGE_ID}
+              '''
+            }
+          }
+        }
+        stage ('Deploy To Dev') {
+          println "==== Deploy To Dev ====="
+          DEPLOY_ENV="dev"
+          deployToEnv(DEPLOY_ENV, DOCKER_REGISTRY, SERVICE_IMAGE, SERVICE_VERSION, OCP_URL, OCP_CLUSTER_TOKEN);
+        }
+
+        stage ('Deploy To Test') {
+          println "==== Deploy To Test ====="
+          DEPLOY_ENV="test"
+          deployToEnv(DEPLOY_ENV, DOCKER_REGISTRY, SERVICE_IMAGE, SERVICE_VERSION, OCP_URL, OCP_CLUSTER_TOKEN);
+        }
+
+        stage ('Regression in Test Env') {
+          println "====Dummy --- Regression in Test Env ====="
+
+        }
+
+        stage ('Deploy To Prod') {
+          println "==== Deploy To Prod ====="
+          DEPLOY_ENV="prod"
+          deployToEnv(DEPLOY_ENV, DOCKER_REGISTRY, SERVICE_IMAGE, SERVICE_VERSION, OCP_URL, OCP_CLUSTER_TOKEN);
+        }
+
+    }
+    finally {
+      stage('Finalize') {
+          sh 'docker system prune -f'
+      }
+    }
+
+}
+
+def deployToEnv(deploy_env, docker_registry, service_image, service_version, ocp_url, ocp_cluster_token) {
+  withEnv(['MS_IMAGE_ID=docker.io/'+ docker_registry+'/'+service_image+':'+service_version,
+  'IMAGETAG='+ service_image+':'+service_version,
+  'OCP_URL='+ ocp_url,
+  'APP_NAME='+service_image,
+  'APP_VERSION='+service_version,
+  'DEPLOY_ENV='+deploy_env]) {
+
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding',
+      credentialsId:ocp_cluster_token,
+      passwordVariable:'OCP_PASSWORD',
+      usernameVariable:'OCP_USERNAME']
+      ]) {
+        sh """
+            oc login --username=${env.OCP_USERNAME} --password=${env.OCP_PASSWORD} --insecure-skip-tls-verify ${OCP_URL}
+
+            echo ${MS_IMAGE_ID}
+            oc project ${DEPLOY_ENV}
+
+            oc import-image ${IMAGETAG} --from ${MS_IMAGE_ID} --confirm
+
+            oc process -f $WORKSPACE/openshift/deploy-template.yml \
+              -p APP_NAME=${APP_NAME} \
+              -p APP_VERSION=${APP_VERSION} \
+              -p PROJECT_NAME=${APP_NAME} \
+              | oc apply -f -
+          """
+      }
+
+    }
+
+}

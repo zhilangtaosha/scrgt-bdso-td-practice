@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+
+    "definitions": {
+        "movieCount" : {
+            "type" : "object",
+            "properties" : {
+                "year" : { "type" : "integer" },
+                "movieCount" : {  "type" : "integer" }
+            },
+            "required": ["year", "movieCount"]
+        }
+    },
+
+    "type": "object",
+    "properties": {
+        "ranking": {
+            "type": "integer"
+        },
+        "numberOfMovies": {
+            "type": "integer"
+        },        
+        "movies": {
+            "type": "array",
+            "items": {
+                "$ref": "./Movie.json"
+            }
+        },
+        "listOfMoviesByYear" :  {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/movieCount"
+            }
+        }
+    }
+}

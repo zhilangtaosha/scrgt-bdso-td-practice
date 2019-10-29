@@ -1,0 +1,23 @@
+<div class="data-grid" *ngIf="data">
+  <div class="data-row" *ngFor="let ele of data">
+    <div class="data-background">
+      {{ ele.year }}
+    </div>
+    <div class="data-col box-office">
+      <span class="cell-title">
+        {{ ele.boxOffice | currency:'USD':'symbol':'1.0' }}
+      </span>
+      <span class="cell-subtitle">
+        Domestic Box Office for Films Featuring Top 100 Celebrities
+      </span>
+    </div>
+    <div class="data-col appearances">
+      <span class="cell-title">
+        {{ ele.movieCount }}
+      </span>
+      <span class="cell-subtitle">
+        Film Appearances for the Top 100 Celebrities
+      </span>
+    </div>
+  </div>
+</div>

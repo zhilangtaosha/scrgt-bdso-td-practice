@@ -1,0 +1,57 @@
+defaultTasks 'clean','test','aggregate'
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+    dependencies {
+        classpath("net.serenity-bdd:serenity-gradle-plugin:2.0.70")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'net.serenity-bdd.aggregator'
+apply from: "$rootDir/gradle/libraries.gradle"
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+/**
+ * This is needed to make sure there are no Cucumber 2 dependencies in the classpath.
+ */
+configurations.all {
+    resolutionStrategy {
+        force "io.cucumber:cucumber-core:${cucumberVersion}"
+    }
+}
+dependencies {
+    compile libs.logback
+
+    testCompile libs.test.cucumber.java,
+            libs.test.cucumber.junit,
+            libs.test.junit,
+            libs.test.assertj
+
+    testCompile group: 'org.testng', name: 'testng', version: '6.8'
+    testCompile group: 'io.rest-assured', name: 'rest-assured', version: '3.0.0'
+
+
+}
+
+test {
+    testLogging.showStandardStreams = true
+    systemProperties System.getProperties()
+}
+
+gradle.startParameter.continueOnFailure = true
+
+test.finalizedBy(aggregate)
