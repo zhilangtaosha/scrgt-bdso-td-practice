@@ -1,6 +1,6 @@
 <h1>Biometrics Development, Security, and Operations (BDSO) Code Submission</h1>
 
-![Application Home Screen](./img/business_supervisor_celebrity_page_layout.png)
+![Application Home Screen](./startup/img/business_supervisor_celebrity_page_layout.png)
 
 <h2>Part I: Solution Description</h2>
 <h6>Installation instructions are in Part 2 below</h6>  
@@ -58,10 +58,10 @@ For interactive notebooks we ended up using AWS EMR Cluster with JupyterHub. Jup
 
 ## Architecture Diagrams
 
-![BDSO Full Stack Cloud Solution Architecture](./img/Full-Stack-Cloud-Solution-Architecture.png) 
+![BDSO Full Stack Cloud Solution Architecture](./startup/img/Full-Stack-Cloud-Solution-Architecture.png) 
 
 
-![BDSO Deployment Architecture View](./img/DeploymentView.png) 
+![BDSO Deployment Architecture View](./startup/img/DeploymentView.png) 
 
 ### Consideration of the maintainability and scalability of this solution 
 This solution is highly scalable from the foundation to the application layer.  The foundation is scalable inherently due to the nature of the AWS Cloud Infrastructure. Our solution is based on containerized microservices deployed using OpenShift/Kubernetes which provides the necessary scalabilty and  orchestration. Our Angular frontend application and all backend services are deployed as microservices enabling scaling based on load as programmed in OpenShift.
@@ -104,9 +104,9 @@ Often searching for a movie star requires knowledge of information that is not r
 1.	Log into BioCeleb application using the ‘business user’ login (test-user/test123) on web application URL
 2.	Select a celebrity or type in “6 Feet, American, Bald” into the search bar to test the fuzzy search functionality and click search.  The search result will give you all celebrities that match the criteria
 3.	Click on Samuel Jackson to view the celebrity result profile
-![Samuel Jackson Search Results Page](./img/samuel_jackson_search_results.png)
+![Samuel Jackson Search Results Page](./startup/img/samuel_jackson_search_results.png)
 4.	When scrolled down the profile gives you recommendations for celebrities based on Facial features, Genre plot, Genre Stats, Genre similar bios. 
-![Samuel Jackson Recommedation](./img/samuel_jackson_recommendations.png)
+![Samuel Jackson Recommedation](./startup/img/samuel_jackson_recommendations.png)
 
 
 #### Case 2:
@@ -115,10 +115,10 @@ BioCeleb data can be wrong and need to be edited after the automated processes a
 2.	Locate the celebrity (Emma Watson) whose data needs to be edited.
 3.	Click on the Emma Watson’s profile
 4.	Click on the “Edit” button 
-![Emma Watson Edit Profile](./img/emma_watson_edit_screen.png)
+![Emma Watson Edit Profile](./startup/img/emma_watson_edit_screen.png)
 5.	Edit the Nickname field and Save the changes 
 6.	Scroll down to the “Change Log”.  That should display the field name, change date and who made the change.
-![Emma Watson Edit Profile](./img/emma_watson_changelog.png)
+![Emma Watson Edit Profile](./startup/img/emma_watson_changelog.png)
 7.	Click “View “. Confirm that the change was made to the correct field.
 
 <h2>Part 2: Installation Instructions</h2>
@@ -136,7 +136,7 @@ _____________________________________________
 - As github User **IRNSDD-Demo3**,  go to URL Link https://github.com/SalientCRGT/scrgt-bdso-cc-startup/tree/master/cloudformation/start_template.yml on your browser
 - right-click on **"Raw"** data button and use option _**"Save link as..."**_
 - Save file name = _**"start_template.yml"**_, choosing "Save as type" = _**All Files**_ 
-![Download and Save start_template.yml](./img/cloudformation-save-template.png)
+![Download and Save start_template.yml](./startup/img/cloudformation-save-template.png)
 
 ### Step 2: Run CloudFormation Template on AWS Account
 - On the AWS Console bring up _"CloudFormation Service"_ and choose _"Create Stack"_ or _"Create New Stack"_
@@ -144,9 +144,9 @@ _____________________________________________
 - On _"Specify Details"_ page enter unique _"Stack name"_, and password for GitHub user **IRNSDD-Demo3**, rest of values are defaulted. After adding Stack Name and GitHub User's password, hit _**Next**_ button.
 - On _"Options"_ page make no changes and hit _**Next**_ button at bottom to continue.
 - On _"Review"_ page select checkbox and acknowledge  _"I acknowledge that AWS CloudFormation might create IAM resources with custom names"_ to accept and then hit _**Create**_ button to start the creation process. This may take up to 5 mins. Once complete, the status for the stack will say "CREATE_COMPLETE"
-![Create Stack from start_Template.yml](./img/cloudformation-create-stack.png)
+![Create Stack from start_Template.yml](./startup/img/cloudformation-create-stack.png)
 - On _"Output"_ page After the template processing is complete, select the record and the checkbox next to the stack name you provided and at the bottom pane choose Output tab. Select the value for Public IP. This is the IP of the eC2 instance referred to as the Startup Server.
-![Locate Public IP for EC2 Instance](./img/output-public-ip.png)
+![Locate Public IP for EC2 Instance](./startup/img/output-public-ip.png)
 ### Step 3: Connect to Startup Server (EC2 Instance) created by CloudFormation Template to kick off Single-Script for Creation of infrastructure and Demolition of infrastructure 
 - Login as user _**‘ec2-user’**_ with the public IP address for Startup Server as follows: _**ssh ec2-user@PublicIP**_.  Note: no public key is necessary.  
 - The password for **'ec2-user'** has been sent to you via email, please check the ec2-user password section in the email.
