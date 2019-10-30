@@ -13,7 +13,6 @@ data "cloudflare_zones" "scrgt" {
 
 resource "cloudflare_record" "jenkins" {
 zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
-  domain = "${local.domain}"
   name   = "jenkins.${local.project}"
   value  = "${aws_instance.jenkins.public_ip}"
   type   = "A"
@@ -22,7 +21,6 @@ zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
 
 resource "cloudflare_record" "sonar" {
 zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
-  domain = "${local.domain}"
   name   = "sonar.${local.project}"
   value  = "${aws_instance.sonar.public_ip}"
   type   = "A"

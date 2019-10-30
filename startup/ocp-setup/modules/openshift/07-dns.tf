@@ -50,7 +50,7 @@ provider "cloudflare" {
 
 data "cloudflare_zones" "scrgt" {
   filter {
-    name   = "${local.domain}"
+    name   = "${var.domain}"
     status = "active"
     paused = false
   }
@@ -58,7 +58,6 @@ data "cloudflare_zones" "scrgt" {
 
 resource "cloudflare_record" "ocp" {
   zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
-  domain = "${var.domain}"
   name   = "ocp.${var.subdomain}"
   value  = "${aws_eip.master_eip.public_ip}"
   type   = "A"
@@ -67,7 +66,6 @@ resource "cloudflare_record" "ocp" {
 
 resource "cloudflare_record" "wildcard" {
   zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
-  domain = "${var.domain}"
   name   = "*.ocp.${var.subdomain}"
   value  = "${aws_eip.master_eip.public_ip}"
   type   = "A"
