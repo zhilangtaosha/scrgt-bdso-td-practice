@@ -44,11 +44,20 @@ resource "aws_route53_record" "node2-a-record" {
 }
 
 provider "cloudflare" {
-  email = "amit@techsur.solutions"
-  api_token = "aY2oUFUh1aS4dwGVHa1aVlP63SnTvlZssHr5SARF"
+  email = "vijay.deshmukh@ctr.salientcrgt.com"
+  api_token = "A8WSfcOAjHf0cseP8G5avT_RVZjLcXLX_HgNON4t"
+}
+
+data "cloudflare_zones" "scrgt" {
+  filter {
+    name   = "${local.domain}"
+    status = "active"
+    paused = false
+  }
 }
 
 resource "cloudflare_record" "ocp" {
+  zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
   domain = "${var.domain}"
   name   = "ocp.${var.subdomain}"
   value  = "${aws_eip.master_eip.public_ip}"
@@ -57,6 +66,7 @@ resource "cloudflare_record" "ocp" {
 }
 
 resource "cloudflare_record" "wildcard" {
+  zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
   domain = "${var.domain}"
   name   = "*.ocp.${var.subdomain}"
   value  = "${aws_eip.master_eip.public_ip}"

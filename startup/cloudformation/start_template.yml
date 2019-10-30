@@ -219,9 +219,8 @@ Resources:
             # Added the username in the url so it will not prompt for that. This is to reduce # of keys USCIS can enter.
             # need to clone the datascience repo as well to copy files and data to s3.
                
-            git clone --branch master https://${GitUserName}:${GitPW}@github.com/SalientCRGT/scrgt-bdso-cc-startup.git
-            git clone --branch master https://${GitUserName}:${GitPW}@github.com/SalientCRGT/scrgt-bdso-cc-datascience.git
-            
+            git clone --branch master https://${GitUserName}:${GitPW}@github.com/SalientCRGT/scrgt-bdso-td-practice.git
+             
             echo "Configuring aws region (us-east-2)"
 
             if [ -d ~/.aws ]
@@ -231,19 +230,19 @@ Resources:
               mkdir ~/.aws && echo -e "[default]\nregion = us-east-2" > ~/.aws/config
             fi
 
-            pushd ./scrgt-bdso-cc-startup/
+            pushd ./scrgt-bdso-td-practice/startup/
             echo "Universal Password set to $PASS. You can change this in the script if you would like"
             ./startup.sh $PASS
             popd
             
             #get jenkins url
-            pushd ./scrgt-bdso-cc-startup/pipeline-tools/terraform
+            pushd ./scrgt-bdso-td-practice/startup/pipeline-tools/terraform
             JENKINSIP=`terraform output jenkins_ip`
             PROJECT=`terraform output project_name`
             popd
 
             # run datascience shell to copy files and data
-            pushd ./scrgt-bdso-cc-datascience
+            pushd ./scrgt-bdso-td-practice/datascience
             chmod +x ds-start.sh
             ./ds-start.sh $JENKINSIP $PASS $PROJECT
             popd
@@ -259,14 +258,14 @@ Resources:
             #!/bin/bash
             
             # delete vpc. sometimes it does not get deleted
-            pushd scrgt-bdso-cc-startup/pipeline-tools/terraform
+            pushd scrgt-bdso-td-practice/startup/pipeline-tools/terraform
             VPC=`terraform output tools_vpc`
             echo $VPC
             popd
 
 
             PASS=unimportant
-            pushd scrgt-bdso-cc-startup
+            pushd scrgt-bdso-td-practice/startup/
             chmod +x destroy.sh
             ./destroy.sh $PASS
             popd

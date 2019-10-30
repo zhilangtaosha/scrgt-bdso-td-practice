@@ -32,12 +32,12 @@ variable "cluster_id" {
 
 variable "domain" {
   description = "base domain"
-  default = "salientcrgt-bdso.com"
+  default = "salientcrgt-devsecops.com"
 }
 
 variable "subdomain" {
   description = "subdomain used for the bdso code challenge"
-  default = "bdso"
+  default = "bdsotd"
 }
 
 data "aws_availability_zones" "azs" {}

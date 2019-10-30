@@ -2,8 +2,8 @@ locals {
 
   # "project is the subdomain used for the bdso code challenge"
 
-  domain          = "salientcrgt-bdso.com"
-  project         = "bdso" 
+  domain          = "salientcrgt-devsecops.com"
+  project         = "bdsotd" 
   region          = "us-east-2"
   base_ami        = "ami-0d8f6eb4f641ef691"
 }

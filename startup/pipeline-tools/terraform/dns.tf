@@ -1,9 +1,18 @@
 provider "cloudflare" {
-  email = "amit@techsur.solutions"
-  api_token = "aY2oUFUh1aS4dwGVHa1aVlP63SnTvlZssHr5SARF"
+  email = "vijay.deshmukh@ctr.salientcrgt.com"
+  api_token = "A8WSfcOAjHf0cseP8G5avT_RVZjLcXLX_HgNON4t"
+}
+
+data "cloudflare_zones" "scrgt" {
+  filter {
+    name   = "${local.domain}"
+    status = "active"
+    paused = false
+  }
 }
 
 resource "cloudflare_record" "jenkins" {
+zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
   domain = "${local.domain}"
   name   = "jenkins.${local.project}"
   value  = "${aws_instance.jenkins.public_ip}"
@@ -12,6 +21,7 @@ resource "cloudflare_record" "jenkins" {
 }
 
 resource "cloudflare_record" "sonar" {
+zone_id = "${lookup(data.cloudflare_zones.scrgt.zones[0], "id")}"
   domain = "${local.domain}"
   name   = "sonar.${local.project}"
   value  = "${aws_instance.sonar.public_ip}"
